@@ -1,0 +1,1046 @@
+<title>Ruta de tareas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Diseño: cinco columnas (Recibido, En proceso, En revisión, En producción, Terminado); En producción es opcional. En proceso, En revisión y Terminado llevan su variante como etiqueta en la tarjeta. Verde = con Marketing, ámbar = esperando a terceros. Cada cambio queda con fecha para medir días por etapa. */
+:root{
+  --bg:#eef1f5;--panel:#ffffff;--col:#e2e7ee;--ink:#14202b;--ink2:#33414f;--muted:#5d6b79;--line:#d3dae3;
+  --mkt:#0e8f74;--mkt-bg:#dcf3ec;--ext:#d08a1a;--ext-text:#8f5b00;--ext-bg:#fcefd6;--done:#2f7d3a;--done-bg:#dff1e1;--gray-bg:#e6e9ee;
+  --late:#b42318;--now:#1f5fbf;--btn:#1f5fbf;--btn-h:#184c99;--hover:#f4f6f9;--top:#14202b;--ph:#b9c7d6;
+  --font:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1620;--panel:#1a2531;--col:#131d28;--ink:#e6edf3;--ink2:#c3cfda;--muted:#97a6b5;--line:#2c3a49;
+  --mkt:#2fc4a2;--mkt-bg:#12362f;--ext:#f0b23f;--ext-text:#f3c060;--ext-bg:#3a2c12;--done:#5bbf6a;--done-bg:#173a20;--gray-bg:#26323f;
+  --late:#f28b82;--now:#6ba5f2;--btn:#2f6fd0;--btn-h:#3a7de0;--hover:#223040;--top:#0a1119;--ph:#3d5166;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1620;--panel:#1a2531;--col:#131d28;--ink:#e6edf3;--ink2:#c3cfda;--muted:#97a6b5;--line:#2c3a49;
+  --mkt:#2fc4a2;--mkt-bg:#12362f;--ext:#f0b23f;--ext-text:#f3c060;--ext-bg:#3a2c12;--done:#5bbf6a;--done-bg:#173a20;--gray-bg:#26323f;
+  --late:#f28b82;--now:#6ba5f2;--btn:#2f6fd0;--btn-h:#3a7de0;--hover:#223040;--top:#0a1119;--ph:#3d5166;color-scheme:dark}
+*{box-sizing:border-box}
+html{font-family:var(--font);font-size:15px;color:var(--ink);background:var(--bg)}
+body{margin:0;line-height:1.4;background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--now);outline-offset:2px}
+[hidden]{display:none!important}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* barra superior */
+header.top{background:var(--top);color:#fff;display:flex;align-items:center;gap:18px;flex-wrap:wrap;min-height:54px}
+.brand{font-weight:700;font-size:17px;display:flex;align-items:center;gap:10px}
+nav.tabs{display:flex;gap:2px}
+nav.tabs button{background:none;border:0;color:#aebccb;padding:17px 12px 14px;cursor:pointer;font-weight:600;border-bottom:3px solid transparent}
+nav.tabs button.on{color:#fff;border-color:#fff}
+.sp{flex:1}
+.who{display:flex;gap:8px;align-items:center;color:#aebccb;font-size:13px}
+.top select{background:#22313f;border:1px solid #33465a;color:#fff;border-radius:8px;padding:5px 8px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 13px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--hover)}
+.btn.pri{background:var(--btn);border-color:var(--btn);color:#fff}
+.btn.pri:hover{background:var(--btn-h)}
+.btn.ghost{background:none;border-color:#33465a;color:#e3eaf1}
+.btn.ghost:hover{background:#22313f}
+.btn.sm{padding:4px 10px;font-size:13px}
+.btn.danger{color:var(--late)}
+.note{background:#fff4d6;color:#6b4a00;font-size:14px;padding-block:8px;border-bottom:1px solid #ecd48a}
+/* filtros */
+.tools{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;padding-block:12px}
+.fgroup{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.fgroup .lab{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.fchip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 11px;cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.fchip:hover{background:var(--hover)}
+.fchip.on{background:var(--btn);border-color:var(--btn);color:#fff}
+.fchip .av{width:18px;height:18px;font-size:10px;box-shadow:none}
+.fchip.sm{padding:2px 9px;font-size:12px}
+.tools input[type=search]{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--panel);width:200px;max-width:100%}
+.vsep{width:1px;height:22px;background:var(--line)}
+/* tablero */
+.board{display:flex;gap:12px;align-items:flex-start;overflow-x:auto;padding-block:2px 18px;scroll-snap-type:x proximity}
+.col{flex:1 1 0;min-width:240px;background:var(--col);border-radius:12px;padding:10px 8px 8px;display:flex;flex-direction:column;max-height:calc(100vh - 190px);scroll-snap-align:start}
+.col.over{outline:2px dashed var(--ph);outline-offset:-2px}
+.colh{display:flex;align-items:center;gap:8px;padding:0 4px 8px;flex-wrap:wrap}
+.colh h2{font-size:15px;margin:0;font-weight:700}
+.colh .cnt{font-size:13px;color:var(--muted);font-weight:600}
+.colf{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:0 4px 8px}
+.colf input{border:1px solid var(--line);border-radius:6px;padding:2px 6px;background:var(--panel);font-size:12px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.dot.m{background:var(--mkt)}.dot.e{background:var(--ext)}.dot.d{background:var(--done)}.dot.r{background:var(--muted)}.dot.x{background:var(--ph)}
+.cards{display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:60px;padding:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 10px 8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 1px rgba(20,32,43,.06)}
+.card:hover{border-color:var(--ph)}
+.card.dragging{opacity:.4}
+.card.cancel{opacity:.62}
+.card.cancel h3{text-decoration:line-through}
+.card h3{font-size:14px;font-weight:600;margin:0;line-height:1.3;overflow-wrap:anywhere}
+.card h3 .num{color:var(--muted);font-weight:600;margin-right:4px}
+.lbls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.emp{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 16%,var(--panel));border:1px solid color-mix(in srgb,var(--c) 45%,var(--panel));color:var(--ink);white-space:nowrap}
+.tipo{font-size:12px;color:var(--muted)}
+.etq{all:unset;box-sizing:border-box;display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px;cursor:pointer;max-width:100%;overflow-wrap:anywhere}
+.etq.m{background:var(--mkt-bg);color:var(--mkt)}
+.etq.e{background:var(--ext-bg);color:var(--ext-text)}
+.etq.d{background:var(--done-bg);color:var(--done)}
+.etq.x{background:var(--gray-bg);color:var(--muted)}
+.etq:hover{filter:brightness(.96)}
+.etq:focus-visible{outline:2px solid var(--now);outline-offset:2px}
+.etq[disabled]{cursor:default}
+.etq b{font-weight:700}
+.etq .w{font-weight:500}
+.manos{font-size:13px;color:var(--ink2);margin-top:-2px}
+.manos b{font-weight:600}
+.meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.meta .m{display:inline-flex;gap:3px;align-items:center;white-space:nowrap}
+.m.late{color:var(--late)}.m.stale{color:var(--ext-text)}.m.ok{color:var(--done)}
+.avs{display:flex}
+.av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;flex:none;box-shadow:0 0 0 2px var(--panel)}
+.avs .av+.av{margin-left:-5px}
+.av.xs{width:17px;height:17px;font-size:9px;box-shadow:0 0 0 1.5px var(--panel)}
+.pend{display:inline-flex;align-items:center;gap:2px}
+.opt.dis{opacity:.55;cursor:not-allowed}
+.opt.dis:hover{background:none}
+.opt .why{display:block;font-size:12px;font-weight:500;color:var(--late);margin-top:2px}
+.opt .lbl{display:flex;flex-direction:column}
+.empty-col{font-size:13px;color:var(--muted);padding:8px 6px}
+.add{all:unset;cursor:pointer;color:var(--muted);font-weight:600;font-size:13px;padding:8px 6px 2px}
+.add:hover{color:var(--ink)}
+.add:focus-visible{outline:2px solid var(--now)}
+/* lista y resumen */
+.wrap{max-width:1240px}
+.scroll{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table.t th{text-align:left;font-size:13px;font-weight:600;color:var(--muted);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:middle}
+table.t tr.click{cursor:pointer}
+table.t tr.click:hover td{background:var(--hover)}
+table.t .n{text-align:right}
+.sorth{all:unset;cursor:pointer}
+.sorth.on{color:var(--ink)}
+.stage{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;white-space:nowrap}
+.muted{color:var(--muted)}
+.cards4{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:24px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi .num{font-size:32px;font-weight:700;line-height:1.1}
+.kpi .lbl{font-weight:600}
+.kpi .hint{font-size:13px;color:var(--muted)}
+.sec{margin-bottom:26px}
+.sec h2{font-size:16px;margin:0 0 4px}
+.sec p.intro{margin:0 0 10px;color:var(--muted);font-size:14px;max-width:70ch}
+.rhead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.rhead input,.pick input{border:1px solid var(--line);border-radius:6px;padding:2px 6px;background:var(--panel);font-size:13px}
+.pick{margin-bottom:16px}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:0 24px}
+/* diálogos */
+dialog{border:0;padding:0;background:var(--panel);color:var(--ink);box-shadow:0 24px 70px rgba(10,20,30,.35)}
+dialog::backdrop{background:rgba(10,20,30,.45)}
+dialog.side{margin:0 0 0 auto;height:100%;max-height:100%;width:min(580px,100vw);border-radius:0}
+dialog.mid{border-radius:12px;width:min(520px,94vw)}
+.tp{padding:18px max(20px,env(safe-area-inset-right,0px)) 28px 22px;display:flex;flex-direction:column;gap:18px}
+.tp-h{display:flex;align-items:center;gap:10px}
+.tp-h .num{font-size:13px;font-weight:700;color:var(--muted)}
+.x{all:unset;cursor:pointer;margin-left:auto;font-size:22px;line-height:1;color:var(--muted);padding:2px 6px;border-radius:6px}
+.x:hover{background:var(--hover);color:var(--ink)}
+.x:focus-visible{outline:2px solid var(--now)}
+.ttl-in{font-size:21px;font-weight:700;border:1px solid transparent;border-radius:8px;padding:4px 6px;margin:-4px -6px;width:calc(100% + 12px);resize:none;background:none;line-height:1.25}
+.ttl-in:hover,.ttl-in:focus{border-color:var(--line);background:var(--panel)}
+.box{background:var(--bg);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.ask{background:var(--ext-bg);color:var(--ink);border-radius:10px;padding:12px 14px;display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-weight:600}
+.mv{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mv select,.mv input{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--panel);min-width:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f.full{grid-column:1/-1}
+.f>label,.lb{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.f input,.f select,.f textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
+.f input:disabled{opacity:.55}
+.f textarea{min-height:76px;resize:vertical}
+.f .ro{padding:8px 0;font-weight:600}
+.f .hint{font-size:12px;color:var(--muted)}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.opt:hover{background:var(--hover)}
+.opt:has(input:checked){border-color:var(--btn);box-shadow:inset 0 0 0 1px var(--btn)}
+.opt input{accent-color:var(--btn);width:16px;height:16px;margin:0}
+.opt .who2{margin-left:auto;font-size:12px;font-weight:600}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{position:relative}
+.pill input{position:absolute;opacity:0;width:1px;height:1px}
+.pill span{display:inline-flex;gap:6px;align-items:center;padding:4px 11px 4px 5px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;background:var(--panel)}
+.pill span:hover{background:var(--hover)}
+.pill input:checked+span{background:var(--btn);border-color:var(--btn);color:#fff}
+.pill input:focus-visible+span{outline:2px solid var(--now);outline-offset:2px}
+.pill input:disabled+span{cursor:default}
+.pill .av{width:20px;height:20px;font-size:10px;box-shadow:none}
+.subs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sub{display:grid;grid-template-columns:22px minmax(0,1fr) 112px 62px 26px;gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--line)}
+.sub:first-child{border-top:0}
+.sub input[type=text]{border:1px solid transparent;border-radius:6px;padding:4px 6px;background:none;min-width:0;width:100%}
+.sub input[type=text]:hover,.sub input[type=text]:focus{border-color:var(--line)}
+.sub.done input[type=text]{text-decoration:line-through;color:var(--muted)}
+.sub select{border:1px solid var(--line);border-radius:6px;padding:3px 4px;background:var(--panel);font-size:13px;min-width:0}
+.sub .d{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.sub input[type=checkbox]{width:17px;height:17px;accent-color:var(--done)}
+.subadd{display:grid;grid-template-columns:minmax(0,1fr) 112px auto;gap:8px;padding:8px 10px;background:var(--bg)}
+.hadd{display:grid;grid-template-columns:76px 112px 140px minmax(0,1fr) auto;gap:8px;padding:8px 10px;background:var(--bg)}
+.hadd input,.hadd select{border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);min-width:0}
+.hrow{display:grid;grid-template-columns:52px 70px 112px minmax(0,1fr) 26px;gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);font-size:14px}
+.hrow:first-child{border-top:0}
+.subadd input,.subadd select{border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel);min-width:0}
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--done)}
+table.h{width:100%;border-collapse:collapse;font-size:13px}
+table.h th{text-align:left;color:var(--muted);font-weight:600;padding:4px 8px 4px 0}
+table.h td{padding:5px 8px 5px 0;border-top:1px solid var(--line)}
+table.h .n{text-align:right}
+.danger-zone{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--line)}
+.dlg{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+.dlg h3{margin:0;font-size:18px}
+.dlg .sub-h{margin:-8px 0 0;color:var(--muted);font-size:14px}
+.dact{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#14202b;color:#fff;border:1px solid #33465a;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;max-width:90vw}
+.toast.show{opacity:1}
+.loading{padding:40px 0;color:var(--muted)}
+.login{max-width:380px;margin:48px auto;display:flex;flex-direction:column;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px}
+.login h2{margin:0;font-size:20px}
+.login .err{margin:0;color:var(--late);font-size:14px}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rlist .row{display:flex;gap:8px;align-items:center}
+.rlist .row span{flex:1}
+@media(max-width:700px){.col{flex:0 0 86vw;min-width:0;max-height:none}.grid{grid-template-columns:1fr}.sub{grid-template-columns:22px minmax(0,1fr) 96px 26px}.sub .d{display:none}.subadd{grid-template-columns:1fr 1fr}.subadd .btn{grid-column:1/-1}.hadd{grid-template-columns:1fr 1fr}.hadd .btn,.hadd #hrsN{grid-column:1/-1}.cols2{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top gut">
+  <div class="brand"><svg width="24" height="24" viewBox="0 0 26 26" fill="none" aria-hidden="true"><path d="M3 20c5 0 4-14 10-14s5 14 10 14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="3" cy="20" r="2.6" fill="#0e8f74"/><circle cx="13" cy="6" r="2.6" fill="#e0971f"/><circle cx="23" cy="20" r="2.6" fill="#fff"/></svg>Ruta de tareas</div>
+  <nav class="tabs" id="tabs"><button data-view="tablero">Tablero</button><button data-view="lista">Lista</button><button data-view="resumen">Resumen</button></nav>
+  <div class="sp"></div>
+  <label class="who" for="me">Yo soy <select id="me"></select></label>
+  <button class="btn ghost sm" id="cfgBtn" data-act="cfg">Ajustes</button>
+  <button class="btn pri sm" id="newBtn" data-act="new" data-col="recibido">+ Nueva tarea</button>
+  <button class="btn ghost sm" id="outBtn" data-act="logout" hidden>Salir</button>
+</header>
+<div id="note"></div>
+<div class="tools gut" id="tools"></div>
+<main class="gut" id="content"><div class="loading">Cargando el tablero…</div></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script>
+'use strict';
+/* ================= Configuración ================= */
+const LKEY='ruta-tablero-v1';
+const COLS=[
+  {id:'recibido',name:'Recibido',dot:'r'},
+  {id:'proceso',name:'En proceso',dot:'m'},
+  {id:'revision',name:'En revisión',dot:'e'},
+  {id:'produccion',name:'En producción',dot:'e'},
+  {id:'terminado',name:'Terminado',dot:'d',done:true},
+];
+// Variantes dentro de una columna. ext = la tarea espera a alguien fuera de Marketing.
+const ETAPAS=[
+  {id:'mkt',name:'Trabajo Marketing',ext:false},
+  {id:'cotizacion',name:'En cotización',ext:true},
+];
+const REVISIONES=[
+  {id:'presupuesto',name:'Autorización de presupuesto',ext:true},
+  // Después de aprobado el presupuesto, Finanzas transfiere al proveedor antes de producir
+  {id:'pago',name:'Pago a proveedor (Finanzas)',ext:true,manos:'Finanzas'},
+  {id:'vb',name:'Visto bueno',ext:true},
+];
+const FINALES=[
+  {id:'entregado',name:'Entregado'},
+  {id:'publicado',name:'Publicado'},
+  {id:'recepcionado',name:'Material recepcionado'},
+  {id:'cancelado',name:'Cancelado / descartado',cancel:true},
+];
+const colOf=id=>COLS.find(c=>c.id===id)||COLS[0];
+const etapaOf=id=>ETAPAS.find(e=>e.id===id)||ETAPAS[0];
+const revOf=id=>REVISIONES.find(e=>e.id===id)||REVISIONES.find(e=>e.id==='vb');
+const finalOf=id=>FINALES.find(e=>e.id===id)||FINALES[0];
+// Variantes de cada columna que las tiene (las demás no llevan variante)
+const VARIANTES={proceso:ETAPAS,revision:REVISIONES,terminado:FINALES};
+const defEtapa=col=>({proceso:'mkt',revision:'vb',terminado:'entregado'})[col]||'';
+// Etapas para medir tiempos: cada estadía de una tarea cae en una de estas
+const STAGES=[{id:'recibido',name:'Recibido',ext:false},...ETAPAS,...REVISIONES,{id:'produccion',name:'En producción',ext:true},{id:'terminado',name:'Terminado',ext:false,done:true}];
+const stageOf=k=>STAGES.find(s=>s.id===k)||STAGES[0];
+const stageKey=o=>o.col==='proceso'||o.col==='revision'?(o.etapa||defEtapa(o.col)):o.col;
+const usesManos=(col,etapa)=>col==='revision'||col==='produccion'||(col==='proceso'&&etapaOf(etapa).ext);
+const PALETTE=['#2563eb','#0e8f74','#c2410c','#7c3aed','#be123c','#0369a1','#4d7c0f','#a21caf'];
+const STALE=7;
+const ICON={
+  check:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3"/><path d="M5 8.2l2 2 4-4.4"/></svg>',
+  cal:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5.5 1.5v3M10.5 1.5v3"/></svg>',
+  clock:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></svg>',
+  down:'<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>',
+};
+
+/* ================= Utilidades ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayISO=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const addDays=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const dd=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/864e5);
+// Hora de cada cambio (HH:MM local). Los cambios antiguos sin hora se toman a las 09:00.
+const nowHM=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const tsOf=(d,h)=>new Date(d+'T'+(h||'09:00')).getTime();
+const mKey=m=>m.date+' '+(m.time||'');
+const dur=h=>{h=Math.max(0,h||0);if(h<1)return Math.round(h*60)+' min';if(h<24){const H=Math.floor(h),M=Math.round((h-H)*60);return M===60?(H+1)+' h':H+' h'+(M?' '+M+' min':'')}const d=Math.floor(h/24),x=Math.round(h-d*24);return x?`${d} d ${x} h`:dias(d)};
+const fdh=(d,h)=>fd(d)+(h?' '+h:'');
+const fd=d=>d?d.slice(8,10)+'-'+d.slice(5,7):'';
+const fdf=d=>d?fd(d)+'-'+d.slice(0,4):'';
+const plural=(n,a,b)=>n===1?a:b;
+const dias=n=>n+' '+plural(n,'día','días');
+const r1=n=>(Math.round(n*10)/10).toLocaleString('es-CL');
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+// Horas trabajadas por Marketing, registradas a mano en la ficha
+const horasDe=t=>(t.horas||[]).reduce((x,h)=>x+(+h.h||0),0);
+const hrs=n=>r1(n)+' h';
+const clone=o=>JSON.parse(JSON.stringify(o));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),3400)}
+
+/* ================= Estado ================= */
+let TASKS=new Map(), CFG={people:[],empresas:[]}, DB=null, USER=null, UID=null, RO=false, MODE='cargando';
+const ui={view:'tablero',mine:false,emp:'',resp:'',q:'',order:'asc',sortK:'ingreso',sortDir:'asc',hideDone:true,me:'',openId:null,doneRange:'mes',doneFrom:'',doneTo:'',askRev:null,rTab:'general',rRange:'mes',rFrom:'',rTo:'',rEmp:'',rPer:''};
+const PREFS=['view','mine','emp','resp','order','sortK','sortDir','hideDone','me','doneRange','doneFrom','doneTo'];
+try{const p=JSON.parse(localStorage.getItem(LKEY+'-prefs2'));if(p)PREFS.forEach(k=>{if(k in p)ui[k]=p[k]})}catch(e){}
+function savePrefs(){try{localStorage.setItem(LKEY+'-prefs2',JSON.stringify(Object.fromEntries(PREFS.map(k=>[k,ui[k]]))))}catch(e){}}
+
+const pColor=n=>{const i=CFG.people.indexOf(n);return i<0?'#6b7785':PALETTE[(i+1)%PALETTE.length]};
+const eColor=e=>{const i=CFG.empresas.indexOf(e);return i<0?'#6b7785':PALETTE[i%PALETTE.length]};
+const av=n=>`<span class="av" title="${esc(n)}" style="background:${pColor(n)}">${esc((n||'?')[0])}</span>`;
+const empLabel=e=>`<span class="emp" style="--c:${eColor(e)}">${esc(e)}</span>`;
+const uniq=a=>[...new Set(a.filter(Boolean))].sort((x,y)=>x.localeCompare(y,'es'));
+// Tipos de tarea: lista editable en Ajustes; los nombres antiguos se pasan a los genéricos
+const TIPOS_BASE=['Branding','Material Redes Sociales','Material Impreso','Campaña Digital','Merchandising','Colaboraciones y Contenido','Coordinación'];
+const TIPO_MAP={'Sticker / gráfica impresa':'Material Impreso','Flyers':'Material Impreso','Brandeo (vehículos / espacios)':'Branding','Letrero / señalética':'Branding','POP / merchandising':'Merchandising','Campaña paid media':'Campaña Digital','Lanzamiento':'Campaña Digital','Video / reel':'Material Redes Sociales'};
+function tipos(){return CFG.tipos}
+// Selector de tipo; "Otro tipo…" lo cambia por un campo de texto y el nombre nuevo queda en la lista
+function tipoSelect(attrs,v){const l=v&&!CFG.tipos.includes(v)?[...CFG.tipos,v]:CFG.tipos;
+  return `<select ${attrs}><option value="">Sin tipo</option>${l.map(x=>`<option ${x===v?'selected':''}>${esc(x)}</option>`).join('')}<option value="__new">+ Otro tipo…</option></select>`}
+function addTipo(v){v=matchName(v,CFG.tipos);if(v&&!CFG.tipos.includes(v)){CFG={...CFG,tipos:[...CFG.tipos,v]};persistCfg();toast(`Nuevo tipo: ${v}`)}return v}
+document.addEventListener('change',e=>{const el=e.target;if(el.tagName!=='SELECT'||el.value!=='__new')return;e.stopImmediatePropagation();
+  const inp=document.createElement('input');[...el.attributes].forEach(a=>inp.setAttribute(a.name,a.value));inp.placeholder='Nombre del nuevo tipo';inp.value='';
+  el.replaceWith(inp);inp.focus()},true);
+function manosList(){const a=[];TASKS.forEach(t=>(t.moves||[]).forEach(m=>a.push(m.manos)));return uniq(a)}
+function matchName(v,list){v=(v||'').trim().replace(/\s+/g,' ');if(!v)return '';return list.find(x=>x.toLowerCase()===v.toLowerCase())||v}
+function nextNum(){let m=0;TASKS.forEach(t=>{const r=/^T(\d+)$/.exec(t.num||'');if(r)m=Math.max(m,+r[1])});return 'T'+String(m+1).padStart(2,'0')}
+// Acepta datos de versiones anteriores del tablero (7, 4 o 3 columnas) y los lleva a las 5 columnas actuales
+function normStep(o){
+  const c=o.col,e=o.etapa;
+  if(c==='entregado')return {...o,col:'terminado',etapa:'entregado'};
+  if(c==='aprobacion'||c==='presupuesto'||(c==='proceso'&&e==='aprobacion'))return {...o,col:'revision',etapa:'presupuesto'};
+  if(c==='produccion'||(c==='proceso'&&e==='produccion'))return {...o,col:'produccion',etapa:''};
+  if(c==='cotizacion')return {...o,col:'proceso',etapa:c};
+  if(c==='proceso')return {...o,etapa:e||'mkt'};
+  if(c==='revision')return {...o,etapa:REVISIONES.some(r=>r.id===e)?e:'vb'};
+  if(c==='terminado')return {...o,etapa:e||'entregado'};
+  return {...o,col:'recibido',etapa:''};
+}
+function normTask(t){const n=normStep(t);n.tipo=TIPO_MAP[t.tipo]||t.tipo||'';n.moves=(t.moves||[]).map(normStep);n.manos=t.manos||'';n.motivo=t.motivo||'';n.horas=t.horas||[];return n}
+
+/* ================= Tiempos ================= */
+// Cada cambio abre una estadía (etapa + en manos de); termina cuando empieza la siguiente.
+function info(t){
+  const ms=(t.moves||[]).map((m,i)=>({...m,i})).sort((a,b)=>mKey(a).localeCompare(mKey(b))||a.i-b.i);
+  const today=todayISO(),now=Date.now();
+  const stays=ms.map((m,i)=>{const nx=ms[i+1],end=nx?nx.date:'',k=stageKey(m),st=stageOf(k);
+    return {key:k,col:m.col,etapa:m.etapa,manos:m.manos||'',motivo:m.motivo||'',start:m.date,startTime:m.time||'',end,endTime:nx?nx.time||'':'',by:m.by,byName:m.byName||'',
+      days:st.done?0:Math.max(0,dd(m.date,end||today)),t0:tsOf(m.date,m.time),t1:nx?tsOf(nx.date,nx.time):now,hrs:st.done?0:Math.max(0,((nx?tsOf(nx.date,nx.time):now)-tsOf(m.date,m.time))/36e5),ext:!!st.ext,done:!!st.done}});
+  const cur=stays[stays.length-1];
+  const start=ms[0]?ms[0].date:(t.created||today),startTime=ms[0]?ms[0].time||'':'';
+  const isDone=t.col==='terminado';
+  const cancelled=isDone&&t.etapa==='cancelado';
+  const end=isDone&&cur?cur.start:'';
+  let dm=0,de=0,hm=0,he=0;stays.forEach(s=>{if(s.done)return;if(s.ext){de+=s.days;he+=s.hrs}else{dm+=s.days;hm+=s.hrs}});
+  const revs=stays.filter(s=>s.col==='revision').length;
+  return {stays,cur,start,startTime,end,endTime:isDone&&cur?cur.startTime:'',hm,he,totalH:hm+he,isDone,cancelled,days:cur&&!isDone?cur.days:0,total:Math.max(0,dd(start,end||today)),dm,de,revs,ext:!!(cur&&cur.ext)};
+}
+
+/* ================= Guardado ================= */
+// Base compartida en claude.ai; si no está disponible, copia local en este navegador.
+const queues={};
+function enqueue(key,fn){const p=(queues[key]||Promise.resolve()).then(fn).catch(failWrite);queues[key]=p;return p}
+function failWrite(e){const c=e&&e.code;
+  if(c==='42501'){toast('La base no aceptó el cambio: solo los responsables de la tarea o el administrador pueden modificarla.');sbReload();return}
+  if(c==='invalid_argument'){RO=true;renderAll();toast('No tienes permiso para editar este tablero. Pide acceso como colaborador.')}
+  else if(c==='quota_exceeded')toast('La base de datos está llena. Elimina tareas antiguas para seguir creando.');
+  else toast('No se pudo guardar el último cambio. Revisa tu conexión e inténtalo de nuevo.')}
+function persist(id){
+  const t=TASKS.get(id);if(t)t.updated=new Date().toISOString();
+  renderContent();
+  if(SB&&t&&!canEdit(t)){toast('Solo los responsables de esta tarea o el administrador pueden modificarla.');sbReload();return}
+  if(DB)return enqueue(id,()=>{const cur=TASKS.get(id);if(!cur)return;const {id:_x,...body}=cur;return DB.doc('tasks/'+id).set(body)});
+  saveLocal();
+}
+function removeTask(id){TASKS.delete(id);renderContent();if(DB)return enqueue(id,()=>DB.doc('tasks/'+id).delete());saveLocal()}
+function persistCfg(){renderAll();if(DB)return enqueue('cfg',()=>DB.doc('config/main').set(clone(CFG)));saveLocal()}
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify({cfg:CFG,tasks:[...TASKS.values()]}))}catch(e){}}
+// Primera apertura local: si el navegador no tiene datos, parte con datos-iniciales.js
+function loadLocal(){
+  let r=null;try{r=JSON.parse(localStorage.getItem(LKEY))}catch(e){}
+  if(!r&&window.RUTA_SEED){r={cfg:window.RUTA_SEED.config,tasks:window.RUTA_SEED.tasks};setData(r.cfg,r.tasks);saveLocal();return}
+  if(r)setData(r.cfg,r.tasks);
+}
+function setData(cfg,tasks){
+  CFG=normCfg(cfg);TASKS=new Map((tasks||[]).map(t=>[t.id,normTask(clone(t))]));
+  // Tareas con varios responsables sin subtarea para cada uno (datos anteriores a esta regla)
+  let ch=false;TASKS.forEach(t=>{if(ensureSubs(t))ch=true});
+  // Guarda de una vez el cambio de tipos antiguos a genéricos
+  if((tasks||[]).some(t=>t.tipo&&TIPO_MAP[t.tipo])||JSON.stringify((cfg||{}).tipos||[])!==JSON.stringify(CFG.tipos))ch=true;
+  if(ch)saveLocal();
+}
+function normCfg(c){c=c||{};const tp=c.tipos?(c.tiposV>=2||c.tipos.includes('Coordinación')?c.tipos:[...c.tipos,'Coordinación']):[...TIPOS_BASE];
+  return {people:c.people||[],empresas:c.empresas||[],tipos:[...new Set(tp.map(x=>TIPO_MAP[x]||x))],tiposV:2,coord:'coord' in c?c.coord:'Ignacio'}}
+function newId(){return DB?DB.collection('tasks').doc().id:'L'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+/* ================= Reglas del equipo ================= */
+// Con más de un responsable, cada uno tiene al menos una subtarea a su nombre.
+function ensureSubs(t){
+  if((t.resp||[]).length<2)return [];
+  const added=[];
+  t.resp.forEach(p=>{if(!(t.subs||[]).some(s=>s.resp===p)){t.subs=[...(t.subs||[]),{t:`Parte de ${p}`,resp:p,done:false,start:todayISO(),doneAt:''}];added.push(p)}});
+  return added.length?added:false;
+}
+const pendSubs=t=>(t.subs||[]).filter(s=>!s.done);
+// Devuelve por qué la persona de "Yo soy" no puede llevar la tarea a ese lugar, o '' si puede.
+function canEnter(t,col,etapa){
+  const me=ui.me,coord=CFG.coord||'',isCoord=!coord||me===coord||isAdmin();
+  const isResp=(t.resp||[]).includes(me)||(t.subs||[]).some(s=>s.resp===me);
+  if(!isCoord&&!isResp)return `Solo los responsables de esta tarea o el coordinador (${coord}) pueden moverla.`;
+  const pend=pendSubs(t);
+  const falta=`Faltan subtareas: ${pend.map(s=>(s.resp?s.resp+' – ':'')+s.t).join(', ')}.`;
+  if(((col==='proceso'&&etapa==='cotizacion')||col==='produccion')&&!isCoord)return `Solo el coordinador (${coord}) puede enviar a ${col==='produccion'?'producción':'cotización'}.`;
+  if(col==='produccion'&&pend.length)return 'El material aún no está listo. '+falta;
+  if(col==='revision'&&etapa==='vb'&&pend.length)return falta;
+  if(col==='terminado'&&etapa==='cancelado'&&!isCoord)return `Solo el coordinador (${coord}) puede cancelar una tarea.`;
+  if(col==='terminado'&&etapa!=='cancelado'&&pend.length)return falta;
+  return '';
+}
+
+/* ================= Cambios de estado ================= */
+// Registra un cambio de columna, variante, "en manos de" o motivo, con su fecha y quién lo hizo.
+function applyChange(id,{col,etapa,manos,motivo,date,time}){
+  const t=TASKS.get(id);if(!t)return false;
+  const I=info(t),d=date||todayISO(),h=time||nowHM();
+  etapa=VARIANTES[col]?(etapa||defEtapa(col)):'';
+  manos=usesManos(col,etapa)?matchName(manos,manosList()):'';
+  motivo=col==='terminado'&&etapa==='cancelado'?(motivo||'').trim():'';
+  if(t.col===col&&(t.etapa||'')===etapa&&(t.manos||'')===manos&&(t.motivo||'')===motivo){toast('No hay cambios que registrar');return false}
+  if(!(t.col===col&&(t.etapa||'')===etapa)){const why=canEnter(t,col,etapa);if(why){toast(why);return false}}
+  if(I.cur&&tsOf(d,h)<tsOf(I.cur.start,I.cur.startTime)){toast('La fecha y hora no pueden ser anteriores al inicio de la etapa actual ('+fdh(I.cur.start,I.cur.startTime)+')');return false}
+  t.moves=[...(t.moves||[]),{col,etapa,manos,motivo,date:d,time:h,by:UID,byName:ui.me}];
+  t.col=col;t.etapa=etapa;t.manos=manos;t.motivo=motivo;
+  persist(id);
+  toast(`${t.num||'Tarea'}: ${placeName(t)}${manos?' ('+manos+')':''}`);
+  return true;
+}
+function placeName(t){return t.col==='proceso'?etapaOf(t.etapa).name:t.col==='revision'?revOf(t.etapa).name:t.col==='terminado'?finalOf(t.etapa).name:colOf(t.col).name}
+
+/* ================= Filtros y orden ================= */
+const involves=(t,n)=>(t.resp||[]).includes(n)||(t.subs||[]).some(s=>s.resp===n);
+function visible(t){
+  if(ui.mine&&ui.me&&!involves(t,ui.me))return false;
+  if(ui.emp&&t.empresa!==ui.emp)return false;
+  if(ui.resp&&!involves(t,ui.resp))return false;
+  if(ui.q){const q=ui.q.toLowerCase();const hay=[t.num,t.title,t.desc,t.tipo,t.manos,t.motivo,...(t.subs||[]).map(s=>s.t)].join(' ').toLowerCase();if(!hay.includes(q))return false}
+  return true;
+}
+const byNum=(a,b)=>(a.num||'').localeCompare(b.num||'',undefined,{numeric:true});
+function byIngreso(a,b){const r=info(a).start.localeCompare(info(b).start)||byNum(a,b);return ui.order==='asc'?r:-r}
+// Período: semana (lunes a domingo), mes, personalizado o todo
+function rangeWin(k,from,to){
+  const t=todayISO();
+  if(k==='semana'){const d=new Date(t+'T12:00:00'),mon=addDays(t,-((d.getDay()+6)%7));return [mon,addDays(mon,6)]}
+  if(k==='custom')return [from||'0000-01-01',to||'9999-12-31'];
+  if(k==='todo')return ['0000-01-01','9999-12-31'];
+  const [y,m]=t.split('-').map(Number);return [t.slice(0,8)+'01',t.slice(0,8)+String(new Date(y,m,0).getDate()).padStart(2,'0')];
+}
+function doneWindow(){return rangeWin(ui.doneRange,ui.doneFrom,ui.doneTo)}
+
+/* ================= Render ================= */
+function renderAll(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.view===ui.view));
+  if(ui.me&&!CFG.people.includes(ui.me))ui.me='';
+  if(!ui.me&&CFG.people.length)ui.me=CFG.people.includes('Ignacio')?'Ignacio':CFG.people[0];
+  if(ME)ui.me=ME.nombre;
+  $('#me').innerHTML=ME?`<option>${esc(ME.nombre)}</option>`:CFG.people.length?CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join(''):'<option>Sin personas</option>';
+  $('#me').disabled=!!ME;
+  const off=MODE==='login';
+  $('#tabs').hidden=off;$('.who').hidden=off;$('#newBtn').hidden=RO||off;$('#cfgBtn').hidden=RO||off||(ME&&!ME.admin);$('#outBtn').hidden=!ME;
+  $('#note').innerHTML=MODE==='local'?`<div class="note gut">Versión local de prueba: los cambios se guardan solo en este navegador. Elige tu nombre en "Yo soy" para que quede registrado quién mueve cada tarea, y haz respaldos desde Ajustes.</div>`
+    :MODE==='caido'?`<div class="note gut">Se perdió la conexión con la base de datos. Recarga la página para seguir trabajando.</div>`
+    :RO&&MODE==='db'?`<div class="note gut">Puedes ver el tablero, pero no editarlo. Para mover o crear tareas, pide acceso como colaborador.</div>`:'';
+  renderTools();renderContent();savePrefs();
+}
+function renderTools(){
+  const fchip=(k,v,label)=>{const on=k==='mine'?ui.mine:ui[k]===v;return `<button class="fchip ${on?'on':''}" data-act="f" data-k="${k}" data-v="${esc(v)}" aria-pressed="${on}">${label}</button>`};
+  if(ui.view==='resumen'){$('#tools').innerHTML='';return}
+  $('#tools').innerHTML=`
+    ${ui.me?fchip('mine','','Mis tareas'):''}
+    <span class="vsep"></span>
+    <div class="fgroup"><span class="lab">Empresa</span>${CFG.empresas.map(e=>fchip('emp',e,esc(e))).join('')}</div>
+    <span class="vsep"></span>
+    <div class="fgroup"><span class="lab">Responsable</span>${CFG.people.map(p=>fchip('resp',p,av(p)+esc(p))).join('')}</div>
+    <input type="search" id="q" placeholder="Buscar tarea o proveedor" value="${esc(ui.q)}" aria-label="Buscar">
+    ${ui.view==='tablero'?`<button class="fchip" data-act="order" title="Cambiar el orden por fecha de ingreso">${ui.order==='asc'?'Más antiguas primero ↑':'Más nuevas primero ↓'}</button>`:''}
+    ${ui.view==='lista'?`<label class="fgroup" style="font-size:14px;color:var(--muted)"><input type="checkbox" id="hideDone" ${ui.hideDone?'checked':''}> Ocultar terminadas</label>`:''}
+    ${ui.mine||ui.emp||ui.resp||ui.q?'<button class="btn sm" data-act="clear">Limpiar filtros</button>':''}`;
+}
+function renderContent(){
+  const el=$('#content');
+  if(MODE==='cargando'){el.innerHTML='<div class="loading">Cargando el tablero…</div>';return}
+  if(MODE==='login')return;
+  el.innerHTML=ui.view==='lista'?listView():ui.view==='resumen'?resumenView():boardView();
+}
+
+/* ---------- Tablero ---------- */
+// Etiqueta clicable de la tarjeta: abre la ventana para cambiar la variante o "en manos de"
+function etqBtn(t){
+  const dis=RO?'disabled':'',arrow=RO?'':ICON.down;
+  if(t.col==='proceso'){const e=etapaOf(t.etapa);return `<button class="etq ${e.ext?'e':'m'}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar etapa"><span class="dot ${e.ext?'e':'m'}"></span>${esc(e.name)}${arrow}</button>`}
+  if(t.col==='revision')return `<button class="etq e" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar tipo de revisión"><span class="dot e"></span>${esc(revOf(t.etapa).name)}${arrow}</button>`;
+  if(t.col==='produccion')return `<button class="etq e" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar en manos de quién"><span class="dot e"></span>${t.manos?`<span class="w">En manos de</span> <b>${esc(t.manos)}</b>`:'¿En manos de quién?'}${arrow}</button>`;
+  if(t.col==='terminado'){const f=finalOf(t.etapa);return `<button class="etq ${f.cancel?'x':'d'}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar"><span class="dot ${f.cancel?'x':'d'}"></span>${esc(f.name)}${arrow}</button>`}
+  return '';
+}
+function card(t){
+  const I=info(t),subs=t.subs||[],sd=subs.filter(s=>s.done).length,today=todayISO();
+  const late=t.entrega&&!I.isDone&&t.entrega<today;
+  return `<article class="card ${I.cancelled?'cancel':''}" draggable="${!RO}" data-id="${esc(t.id)}" tabindex="0" aria-label="${esc(t.num+' '+t.title)}">
+    <div class="lbls">${t.empresa?empLabel(t.empresa):''}${t.tipo?`<span class="tipo">${esc(t.tipo)}</span>`:''}</div>
+    <h3><span class="num">${esc(t.num||'')}</span>${esc(t.title)}</h3>
+    ${t.col!=='recibido'?`<div>${etqBtn(t)}</div>`:''}
+    ${(t.col==='proceso'||t.col==='revision')&&t.manos?`<div class="manos">En manos de <b>${esc(t.manos)}</b></div>`:''}
+    ${I.cancelled&&t.motivo?`<div class="manos">Motivo: ${esc(t.motivo)}</div>`:''}
+    <div class="meta"><span class="avs">${(t.resp||[]).map(av).join('')}</span><span class="sp"></span>
+      ${subs.length?`<span class="m ${sd===subs.length?'ok':''}" title="Subtareas completadas">${ICON.check}${sd}/${subs.length}</span>`:''}
+      ${subs.length&&sd<subs.length&&!I.isDone?(()=>{const ps=uniq(pendSubs(t).map(s=>s.resp));return ps.length?`<span class="pend" title="Falta la parte de: ${esc(ps.join(', '))}">${ps.map(p=>av(p).replace('class="av"','class="av xs"')).join('')}</span>`:''})():''}
+      ${t.entrega&&!I.isDone?`<span class="m ${late?'late':''}" title="${late?'Atrasada, entrega':'Entrega'} ${fdf(t.entrega)}">${ICON.cal}${fd(t.entrega)}</span>`:''}
+      <span class="m" title="Fecha de ingreso">ingresó ${fd(I.start)}</span>
+      ${horasDe(t)?`<span class="m" title="Horas de Marketing">${hrs(horasDe(t))}</span>`:''}
+      ${I.isDone?`<span class="m ${I.cancelled?'':'ok'}" title="Duración total">${dur(I.totalH)}</span>`:`<span class="m ${I.days>=STALE?'stale':''}" title="Tiempo en la etapa actual">${ICON.clock}${I.days?I.days+' d':dur(I.cur?I.cur.hrs:0)}</span>`}
+    </div></article>`;
+}
+function boardView(){
+  const list=[...TASKS.values()].filter(visible);
+  return `<div class="board" id="board">${COLS.map(c=>{
+    let ts=list.filter(t=>t.col===c.id).sort(byIngreso);
+    let filt='';
+    if(c.done){const [a,b]=doneWindow();ts=ts.filter(t=>{const e=info(t).end;return e>=a&&e<=b});
+      const ch=(v,l)=>`<button class="fchip sm ${ui.doneRange===v?'on':''}" data-act="range" data-v="${v}">${l}</button>`;
+      filt=`<div class="colf">${ch('semana','Esta semana')}${ch('mes','Este mes')}${ch('custom','Personalizado')}
+        ${ui.doneRange==='custom'?`<span class="fgroup" style="font-size:12px">desde <input type="date" id="doneFrom" value="${esc(ui.doneFrom)}" aria-label="Desde"> hasta <input type="date" id="doneTo" value="${esc(ui.doneTo)}" aria-label="Hasta"></span>`:''}</div>`}
+    return `<section class="col" data-col="${c.id}" aria-label="${esc(c.name)}">
+      <header class="colh"><span class="dot ${c.dot}"></span><h2>${esc(c.name)}</h2><span class="cnt">${ts.length}</span></header>${filt}
+      <div class="cards">${ts.map(card).join('')||`<div class="empty-col">${c.done?'Nada terminado en este período.':'Sin tareas.'}</div>`}</div>
+      ${RO||c.id!=='recibido'?'':`<button class="add" data-act="new" data-col="${c.id}">+ Añadir tarea</button>`}
+    </section>`}).join('')}</div>`;
+}
+
+/* ---------- Lista ---------- */
+const LCOLS=[['num','Nº','asc'],['title','Tarea','asc'],['empresa','Empresa','asc'],['etapa','Estado','asc'],['manos','En manos de','asc'],['resp','Responsables','asc'],['ingreso','Ingreso','asc'],['dias','En etapa','desc'],['entrega','Entrega','asc']];
+function sortVal(t,k){const I=info(t);return k==='num'?parseInt((t.num||'').slice(1),10)||0:k==='title'?t.title.toLowerCase():k==='empresa'?t.empresa||'':k==='etapa'?STAGES.findIndex(s=>s.id===stageKey(t)):k==='manos'?(t.manos||'~'):k==='resp'?(t.resp||[]).join(','):k==='ingreso'?I.start:k==='dias'?(I.isDone?-1:I.days):t.entrega||'9999'}
+function stageDotCls(t){if(t.col==='terminado')return t.etapa==='cancelado'?'x':'d';const s=stageOf(stageKey(t));return s.ext?'e':t.col==='recibido'?'r':'m'}
+function stageCell(t){return `<span class="stage"><span class="dot ${stageDotCls(t)}"></span>${esc(placeName(t))}</span>`}
+function listView(){
+  const ts=[...TASKS.values()].filter(t=>visible(t)&&!(ui.hideDone&&t.col==='terminado')).sort((a,b)=>{const x=sortVal(a,ui.sortK),y=sortVal(b,ui.sortK);const r=typeof x==='number'?x-y:String(x).localeCompare(String(y),'es');return (ui.sortDir==='asc'?r:-r)||byNum(a,b)});
+  if(!ts.length)return '<div class="loading">No hay tareas con estos filtros.</div>';
+  const today=todayISO();
+  return `<div class="scroll"><table class="t"><thead><tr>${LCOLS.map(([k,l])=>{const on=ui.sortK===k;return `<th class="${k==='dias'?'n':''}"><button class="sorth ${on?'on':''}" data-act="sort" data-k="${k}">${l}${on?(ui.sortDir==='asc'?' ↑':' ↓'):''}</button></th>`}).join('')}</tr></thead><tbody>
+  ${ts.map(t=>{const I=info(t);return `<tr class="click" data-open="${esc(t.id)}" tabindex="0">
+    <td class="muted">${esc(t.num||'')}</td>
+    <td><b>${esc(t.title)}</b>${(t.subs||[]).length?` <span class="muted" style="font-size:13px">${t.subs.filter(s=>s.done).length}/${t.subs.length} subtareas</span>`:''}</td>
+    <td>${t.empresa?empLabel(t.empresa):''}</td>
+    <td>${stageCell(t)}</td>
+    <td>${esc(t.manos||'')}</td>
+    <td><span class="avs">${(t.resp||[]).map(av).join('')}</span></td>
+    <td style="white-space:nowrap">${fd(I.start)} <span class="muted" style="font-size:13px">hace ${dias(dd(I.start,today))}</span></td>
+    <td class="n">${I.isDone?'<span class="muted">terminada</span>':`<b style="${I.days>=STALE?'color:var(--ext-text)':''}">${I.days}</b>`}</td>
+    <td>${t.entrega?`<span style="${t.entrega<today&&!I.isDone?'color:var(--late);font-weight:600':''}">${fd(t.entrega)}</span>`:''}</td></tr>`}).join('')}
+  </tbody></table></div>`;
+}
+
+/* ---------- Resumen ---------- */
+// Tres pestañas: General, Por empresa y Por persona.
+// El período filtra horas, tiempos y terminadas; "abiertas", "estancadas" y "esperando ahora" son siempre el estado actual.
+// Las tareas canceladas no entran en promedios ni en "terminadas".
+const R_TABS=[['general','General'],['empresa','Por empresa'],['persona','Por persona']];
+const R_RANGES=[['todo','Todo'],['mes','Este mes'],['semana','Esta semana'],['custom','Personalizado']];
+const stageDot=s=>`<span class="dot ${s.ext?'e':s.id==='recibido'?'r':'m'}"></span>`;
+const sumHs=hs=>hs.reduce((a,h)=>a+(+h.h||0),0);
+const kpi=(num,lbl,hint,color)=>`<div class="kpi"><span class="num" ${color?`style="color:var(${color})"`:''}>${num}</span><span class="lbl">${lbl}</span>${hint?`<span class="hint">${hint}</span>`:''}</div>`;
+const tbl=(heads,rows)=>`<div class="scroll"><table class="t"><thead><tr>${heads.map(h=>Array.isArray(h)?`<th class="n">${h[0]}</th>`:`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+const sec=(title,intro,content,empty)=>`<div class="sec"><h2>${title}</h2>${intro?`<p class="intro">${intro}</p>`:''}${content||`<p class="muted">${empty}</p>`}</div>`;
+const empCell=e=>e==='Sin empresa'?'<span class="muted">Sin empresa</span>':empLabel(e);
+const perCell=p=>p==='Sin asignar'?'<span class="muted">Sin asignar</span>':`<span style="white-space:nowrap">${av(p)} ${esc(p)}</span>`;
+function resumenView(){
+  const [a,b]=rangeWin(ui.rRange,ui.rFrom,ui.rTo),todo=a==='0000-01-01'&&b==='9999-12-31';
+  const A=a==='0000-01-01'?-Infinity:tsOf(a,'00:00'),B=b==='9999-12-31'?Infinity:tsOf(addDays(b,1),'00:00');
+  const inR=d=>!!d&&d>=a&&d<=b;
+  // Por tarea: tiempos recortados al período, horas registradas en el período y si terminó en el período
+  const X=[...TASKS.values()].map(t=>{const I=info(t);let hm=0,he=0;
+    I.stays.forEach(s=>{if(s.done)return;const h=Math.max(0,Math.min(s.t1,B)-Math.max(s.t0,A))/36e5;if(s.ext)he+=h;else hm+=h});
+    return {t,I,hm,he,hs:(t.horas||[]).filter(h=>inR(h.d)),doneIn:I.isDone&&!I.cancelled&&inR(I.end),cancIn:I.cancelled&&inR(I.end)}});
+  const per=todo?'desde el inicio':ui.rRange==='mes'?'este mes':ui.rRange==='semana'?'esta semana':`del ${fd(a)} al ${fd(b)}`;
+  const ctx={X,inR,per};
+  const head=`<div class="rhead"><div class="fgroup" role="tablist">${R_TABS.map(([v,l])=>`<button class="fchip ${ui.rTab===v?'on':''}" data-act="rtab" data-v="${v}" role="tab" aria-selected="${ui.rTab===v}">${l}</button>`).join('')}</div>
+    <div class="fgroup"><span class="lab">Período</span>${R_RANGES.map(([v,l])=>`<button class="fchip sm ${ui.rRange===v?'on':''}" data-act="rrange" data-v="${v}">${l}</button>`).join('')}
+    ${ui.rRange==='custom'?`<span class="fgroup" style="font-size:13px">desde <input type="date" id="rFrom" value="${esc(ui.rFrom)}" aria-label="Desde"> hasta <input type="date" id="rTo" value="${esc(ui.rTo)}" aria-label="Hasta"></span>`:''}</div></div>`;
+  return `<div class="wrap">${head}${ui.rTab==='empresa'?resEmpresa(ctx):ui.rTab==='persona'?resPersona(ctx):resGeneral(ctx)}</div>`;
+}
+// Fila de tarea abierta, compartida por las pestañas
+function openRows(xs,showEmp){
+  const heads=['Nº','Tarea',...(showEmp?['Empresa']:[]),'Estado','En manos de','Responsables',['En esta etapa']];
+  return tbl(heads,xs.sort((x,y)=>byNum(x.t,y.t)).map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td>${showEmp?`<td>${t.empresa?empLabel(t.empresa):''}</td>`:''}<td>${stageCell(t)}</td><td>${esc(t.manos||'')}</td><td><span class="avs">${(t.resp||[]).map(av).join('')}</span></td><td class="n" style="white-space:nowrap"><b style="${I.days>=STALE?'color:var(--ext-text)':''}">${dur(I.cur?I.cur.hrs:0)}</b></td></tr>`));
+}
+function doneRows(xs,showEmp){
+  return tbl(['Nº','Tarea',...(showEmp?['Empresa']:[]),'Tipo','Cómo terminó','Terminó',['Tiempo total']],xs.sort((x,y)=>y.I.end.localeCompare(x.I.end)).map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td>${showEmp?`<td>${t.empresa?empLabel(t.empresa):''}</td>`:''}<td>${esc(t.tipo||'')}</td><td>${stageCell(t)}</td><td>${fd(I.end)}</td><td class="n">${dur(I.totalH)}</td></tr>`));
+}
+// Tabla por tipo: tareas con actividad, horas y tiempos en el período
+function tipoRows(xs){
+  const act=xs.filter(x=>!x.I.cancelled&&(!x.I.isDone||x.doneIn||x.hs.length||x.hm+x.he>0));
+  const tps=uniq(act.map(x=>x.t.tipo||'Sin tipo'));
+  if(!tps.length)return '';
+  return tbl(['Tipo',['Abiertas'],['Terminadas'],['Horas de Marketing'],['Tiempo con Marketing'],['Tiempo esperando a terceros']],tps.map(tp=>{const ys=act.filter(x=>(x.t.tipo||'Sin tipo')===tp);
+    return `<tr><td><b>${esc(tp)}</b></td><td class="n">${ys.filter(x=>!x.I.isDone).length}</td><td class="n">${ys.filter(x=>x.doneIn).length}</td><td class="n"><b>${hrs(ys.reduce((s,x)=>s+sumHs(x.hs),0))}</b></td><td class="n" style="color:var(--mkt)">${dur(ys.reduce((s,x)=>s+x.hm,0))}</td><td class="n" style="color:var(--ext-text)">${dur(ys.reduce((s,x)=>s+x.he,0))}</td></tr>`}));
+}
+function resGeneral({X,inR,per}){
+  const open=X.filter(x=>!x.I.isDone),ext=open.filter(x=>x.I.ext).length;
+  const done=X.filter(x=>x.doneIn).length,canc=X.filter(x=>x.cancIn).length,h=X.reduce((s,x)=>s+sumHs(x.hs),0);
+  const stale=open.filter(x=>x.I.days>=STALE).sort((p,q)=>q.I.days-p.I.days);
+  const closed=[];X.forEach(x=>{if(!x.I.cancelled)x.I.stays.forEach(s=>{if(s.end&&!s.done&&inR(s.end))closed.push(s)})});
+  const byStage=STAGES.filter(s=>!s.done).map(st=>{const ds=closed.filter(s=>s.key===st.id).map(s=>s.hrs);return {st,n:ds.length,avg:avg(ds),max:ds.length?Math.max(...ds):0}});
+  const byManos=uniq(closed.filter(s=>s.ext&&s.manos).map(s=>s.manos)).map(m=>{const ss=closed.filter(s=>s.manos===m);return {m,n:ss.length,avg:avg(ss.map(s=>s.hrs)),now:open.filter(x=>x.t.manos===m).length}}).sort((p,q)=>q.avg-p.avg);
+  const fin=X.filter(x=>x.doneIn);
+  const byTipo=uniq(fin.map(x=>x.t.tipo||'Sin tipo')).map(tp=>{const is=fin.filter(x=>(x.t.tipo||'Sin tipo')===tp).map(x=>x.I);return {tp,n:is.length,tot:avg(is.map(i=>i.totalH)),m:avg(is.map(i=>i.hm)),e:avg(is.map(i=>i.he)),r:avg(is.map(i=>i.revs))}}).sort((p,q)=>q.n-p.n);
+  return `<div class="cards4">
+    ${kpi(open.length,plural(open.length,'Tarea abierta','Tareas abiertas'),'Ahora')}
+    ${kpi(open.length-ext,'Con Marketing','Recibido o Trabajo Marketing','--mkt')}
+    ${kpi(ext,'Esperando a terceros','Cotización, producción o revisión','--ext-text')}
+    ${kpi(done,'Terminadas',`Entregadas, publicadas o recepcionadas ${per}${canc?`. Además ${canc} ${plural(canc,'cancelada','canceladas')}`:''}`,'--done')}
+    ${kpi(hrs(h),'Horas de Marketing',`Registradas ${per}`)}
+  </div>
+  ${sec('Estancadas',`Tareas abiertas con ${STALE} días o más en la misma etapa.`,stale.length?`<div class="scroll"><table class="t"><tbody>${stale.map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td><td>${t.empresa?empLabel(t.empresa):''}</td><td>${stageCell(t)}</td><td>${esc(t.manos||'')}</td><td class="n"><b style="color:var(--ext-text)">${dias(I.days)}</b></td></tr>`).join('')}</tbody></table></div>`:'','Ninguna. Todas las tareas abiertas han cambiado de etapa en la última semana.')}
+  <div class="cols2">
+  ${sec('Cuánto dura cada etapa',`Tiempo promedio en cada etapa antes de pasar a la siguiente (etapas que terminaron ${per}).`,tbl(['Etapa',['Veces'],['Promedio'],['Máximo']],byStage.map(x=>`<tr><td><span class="stage">${stageDot(x.st)}${esc(x.st.name)}</span></td><td class="n">${x.n}</td><td class="n"><b>${x.n?dur(x.avg):'–'}</b></td><td class="n">${x.n?dur(x.max):'–'}</td></tr>`)))}
+  ${sec('En manos de terceros','Cuánto demora, en promedio, cada proveedor, cliente o área cuando la tarea está con ellos.',byManos.length?tbl(['En manos de',['Veces'],['Promedio'],['Ahora tiene']],byManos.map(x=>`<tr><td><b>${esc(x.m)}</b></td><td class="n">${x.n}</td><td class="n"><b>${dur(x.avg)}</b></td><td class="n">${x.now}</td></tr>`)):'',`No hay etapas de terceros terminadas ${per} con "en manos de" indicado.`)}
+  </div>
+  ${sec('Por tipo de tarea',`Tareas terminadas ${per}: cuánto toma cada tipo de trabajo de principio a fin y cuántas veces pasa por revisión.`,byTipo.length?tbl(['Tipo',['Terminadas'],['Tiempo total'],['Con Marketing'],['Esperando a terceros'],['Revisiones']],byTipo.map(x=>`<tr><td><b>${esc(x.tp)}</b></td><td class="n">${x.n}</td><td class="n"><b>${dur(x.tot)}</b></td><td class="n" style="color:var(--mkt)">${dur(x.m)}</td><td class="n" style="color:var(--ext-text)">${dur(x.e)}</td><td class="n">${r1(x.r)}</td></tr>`)):'',`No hay tareas terminadas ${per}.`)}`;
+}
+function resEmpresa({X,per}){
+  const of=e=>X.filter(x=>(x.t.empresa||'Sin empresa')===e);
+  const emps=[...CFG.empresas.filter(e=>of(e).length),...uniq(X.map(x=>x.t.empresa||'Sin empresa')).filter(e=>!CFG.empresas.includes(e))];
+  const sel=emps.includes(ui.rEmp)?ui.rEmp:'';
+  const pick=`<div class="fgroup pick"><span class="lab">Empresa</span><button class="fchip sm ${sel?'':'on'}" data-act="rEmp" data-v="">Todas</button>${emps.map(e=>`<button class="fchip sm ${sel===e?'on':''}" data-act="rEmp" data-v="${esc(e)}">${esc(e)}</button>`).join('')}</div>`;
+  const note=`<b>Horas de Marketing</b>: tiempo trabajado por el equipo, registrado en cada tarea. Los tiempos muestran cuánto estuvieron las tareas <span style="color:var(--mkt)">con Marketing</span> y cuánto <span style="color:var(--ext-text)">esperando aprobación o a terceros</span>, que no es responsabilidad de Marketing.`;
+  if(!sel){
+    const rows=emps.map(e=>{const xs=of(e),ok=xs.filter(x=>!x.I.cancelled);
+      return `<tr class="click" data-act="rEmp" data-v="${esc(e)}" tabindex="0"><td>${empCell(e)}</td><td class="n">${xs.filter(x=>!x.I.isDone).length}</td><td class="n">${xs.filter(x=>x.doneIn).length}</td><td class="n"><b>${hrs(xs.reduce((s,x)=>s+sumHs(x.hs),0))}</b></td><td class="n" style="color:var(--mkt)">${dur(ok.reduce((s,x)=>s+x.hm,0))}</td><td class="n" style="color:var(--ext-text)">${dur(ok.reduce((s,x)=>s+x.he,0))}</td><td class="n">${xs.filter(x=>!x.I.isDone&&x.I.ext).length||'–'}</td></tr>`});
+    return pick+sec('Todas las empresas',note+` Período: ${per}. Haz clic en una empresa para ver su detalle.`,emps.length?tbl(['Empresa',['Abiertas'],['Terminadas'],['Horas de Marketing'],['Tiempo con Marketing'],['Tiempo esperando a terceros'],['Esperando ahora']],rows):'','Aún no hay tareas.');
+  }
+  const xs=of(sel),ok=xs.filter(x=>!x.I.cancelled),open=xs.filter(x=>!x.I.isDone),hs=xs.flatMap(x=>x.hs.map(h=>({...h,id:x.t.id})));
+  const hm=ok.reduce((s,x)=>s+x.hm,0),he=ok.reduce((s,x)=>s+x.he,0);
+  const ppl=[...CFG.people.filter(p=>hs.some(h=>h.p===p)),...uniq(hs.map(h=>h.p||'Sin asignar')).filter(p=>!CFG.people.includes(p))];
+  return pick+`<div class="cards4">
+    ${kpi(open.length,plural(open.length,'Tarea abierta','Tareas abiertas'),`${open.filter(x=>x.I.ext).length} esperando a terceros ahora`)}
+    ${kpi(xs.filter(x=>x.doneIn).length,'Terminadas',per,'--done')}
+    ${kpi(hrs(sumHs(hs)),'Horas de Marketing',`Registradas ${per}`)}
+    ${kpi(dur(hm),'Tiempo con Marketing',per,'--mkt')}
+    ${kpi(dur(he),'Tiempo esperando a terceros',`Aprobaciones, cotizaciones, proveedores (${per})`,'--ext-text')}
+  </div>
+  ${sec('Tareas abiertas','Estado actual. Haz clic en una tarea para abrir su ficha.',open.length?openRows(open,false):'','No tiene tareas abiertas.')}
+  <div class="cols2">
+  ${sec('Horas por persona',`Registradas ${per}.`,ppl.length?tbl(['Persona',['Horas'],['Tareas']],[...ppl.map(p=>{const mine=hs.filter(h=>(h.p||'Sin asignar')===p);return `<tr><td>${perCell(p)}</td><td class="n"><b>${hrs(sumHs(mine))}</b></td><td class="n">${new Set(mine.map(h=>h.id)).size}</td></tr>`}),`<tr><td><b>Total</b></td><td class="n"><b>${hrs(sumHs(hs))}</b></td><td class="n">${new Set(hs.map(h=>h.id)).size}</td></tr>`]):'',`Nadie registró horas ${per}.`)}
+  </div>
+  ${sec('Por tipo de tarea',`Tareas con actividad ${per}.`,tipoRows(xs),`Sin actividad ${per}.`)}
+  ${sec('Terminadas',`Tareas terminadas ${per}.`,xs.some(x=>x.doneIn)?doneRows(xs.filter(x=>x.doneIn),false):'',`No hay tareas terminadas ${per}.`)}`;
+}
+function resPersona({X,per}){
+  const hs=X.flatMap(x=>x.hs.map(h=>({...h,p:h.p||'Sin asignar',e:x.t.empresa||'Sin empresa',tipo:x.t.tipo||'Sin tipo',x})));
+  const ppl=[...CFG.people,...uniq(hs.map(h=>h.p)).filter(p=>!CFG.people.includes(p))];
+  const sel=ppl.includes(ui.rPer)?ui.rPer:'';
+  const pick=`<div class="fgroup pick"><span class="lab">Persona</span><button class="fchip sm ${sel?'':'on'}" data-act="rPer" data-v="">Todas</button>${ppl.map(p=>`<button class="fchip sm ${sel===p?'on':''}" data-act="rPer" data-v="${esc(p)}">${p==='Sin asignar'?'Sin asignar':av(p)+esc(p)}</button>`).join('')}</div>`;
+  const openOf=p=>X.filter(x=>!x.I.isDone&&involves(x.t,p));
+  if(!sel){
+    const emps=uniq(hs.map(h=>h.e));
+    const rows=ppl.map(p=>{const mine=hs.filter(h=>h.p===p);
+      return `<tr class="click" data-act="rPer" data-v="${esc(p)}" tabindex="0"><td>${perCell(p)}</td><td class="n">${openOf(p).length}</td>${emps.map(e=>{const ys=mine.filter(h=>h.e===e),n=new Set(ys.map(h=>h.x.t.id)).size;return `<td class="n">${n?`${hrs(sumHs(ys))} <span class="muted" style="font-size:13px">(${n})</span>`:'<span class="muted">–</span>'}</td>`}).join('')}<td class="n"><b>${hrs(sumHs(mine))}</b></td></tr>`});
+    rows.push(`<tr><td><b>Total</b></td><td></td>${emps.map(e=>`<td class="n"><b>${hrs(sumHs(hs.filter(h=>h.e===e)))}</b></td>`).join('')}<td class="n"><b>${hrs(sumHs(hs))}</b></td></tr>`);
+    return pick+sec('Horas por persona y empresa',`Horas de Marketing registradas ${per} por cada persona, según la empresa de la tarea. Entre paréntesis, en cuántas tareas registró horas. "Tareas abiertas" es el estado actual. Haz clic en una persona para ver su detalle.`,
+      ppl.length?tbl(['Persona',['Tareas abiertas'],...emps.map(e=>[empCell(e)]),['Total']],rows):'','Agrega personas en Ajustes.');
+  }
+  const mine=hs.filter(h=>h.p===sel),open=openOf(sel);
+  const subs=[];open.forEach(x=>(x.t.subs||[]).forEach(s=>{if(!s.done&&s.resp===sel)subs.push({x,s})}));
+  const fin=X.filter(x=>x.doneIn&&involves(x.t,sel));
+  const group=(k,cell)=>{const ks=uniq(mine.map(h=>h[k]));return ks.length?tbl([k==='e'?'Empresa':'Tipo',['Horas'],['Tareas']],ks.map(v=>{const ys=mine.filter(h=>h[k]===v);return `<tr><td>${cell(v)}</td><td class="n"><b>${hrs(sumHs(ys))}</b></td><td class="n">${new Set(ys.map(h=>h.x.t.id)).size}</td></tr>`})):''};
+  const regs=mine.slice().sort((p,q)=>(q.d||'').localeCompare(p.d||'')).slice(0,20);
+  return pick+`<div class="cards4">
+    ${kpi(open.length,plural(open.length,'Tarea abierta','Tareas abiertas'),'Donde es responsable o tiene subtareas')}
+    ${kpi(subs.length,plural(subs.length,'Subtarea pendiente','Subtareas pendientes'),'A su nombre, ahora')}
+    ${kpi(hrs(sumHs(mine)),'Horas de Marketing',`Registradas ${per}`)}
+    ${kpi(fin.length,'Terminadas',`Tareas en que participó, ${per}`,'--done')}
+  </div>
+  ${sec('Tareas abiertas','Estado actual. Haz clic en una tarea para abrir su ficha.',open.length?openRows(open,true):'','No tiene tareas abiertas.')}
+  ${sec('Subtareas pendientes','Lo que falta de su parte para que las tareas avancen.',subs.length?tbl(['Nº','Tarea','Subtarea',['Desde hace']],subs.map(({x,s})=>`<tr class="click" data-open="${esc(x.t.id)}" tabindex="0"><td class="muted">${esc(x.t.num||'')}</td><td>${esc(x.t.title)}</td><td><b>${esc(s.t)}</b></td><td class="n">${dias(Math.max(0,dd(s.start||todayISO(),todayISO())))}</td></tr>`)):'','No tiene subtareas pendientes.')}
+  <div class="cols2">
+  ${sec('Horas por empresa',`Registradas ${per}.`,group('e',empCell),`No registró horas ${per}.`)}
+  ${sec('Horas por tipo de tarea',`Registradas ${per}.`,group('tipo',v=>esc(v)),`No registró horas ${per}.`)}
+  </div>
+  ${sec('Registros de horas',`Los últimos registros ${per}.`,regs.length?tbl(['Fecha','Tarea','Empresa',['Horas'],'Qué se hizo'],regs.map(h=>`<tr class="click" data-open="${esc(h.x.t.id)}" tabindex="0"><td>${fd(h.d)}</td><td>${esc((h.x.t.num?h.x.t.num+' ':'')+h.x.t.title)}</td><td>${empCell(h.e)}</td><td class="n"><b>${hrs(+h.h||0)}</b></td><td class="muted">${esc(h.n||'')}</td></tr>`)):'',`No registró horas ${per}.`)}
+  ${sec('Terminadas',`Tareas terminadas ${per} en que participó.`,fin.length?doneRows(fin,true):'',`No hay tareas terminadas ${per}.`)}`;
+}
+
+/* ================= Ventana de cambio de etapa ================= */
+// Se abre al pasar una tarea a En proceso, En revisión, En producción o Terminado, o al hacer clic en su etiqueta.
+function stageForm(id,col){
+  const t=TASKS.get(id);if(!t||RO)return;
+  const I=info(t),same=t.col===col,min=I.cur?I.cur.start:'';
+  const title={proceso:same?'Cambiar etapa dentro de En proceso':'Pasa a En proceso',revision:same?'Cambiar tipo de revisión o en manos de quién':'Pasa a En revisión',produccion:same?'Cambiar en manos de quién está':'Pasa a En producción',terminado:same?'Cambiar cómo terminó':'Pasa a Terminado'}[col];
+  const manosField=`<div class="f"><label for="sfManos">¿En manos de quién? <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label>
+      <input id="sfManos" name="manos" list="dlManos" value="${esc(same?t.manos||'':'')}" placeholder="${col==='revision'?'Quién autoriza o revisa. Ej.: Gerencia comercial, CAU, cliente':'Proveedor. Ej.: Imprenta Chillán'}">
+      <datalist id="dlManos">${manosList().map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
+      <span class="hint">Escribe el nombre o elige uno usado antes.</span></div>`;
+  let body='';
+  if(col==='proceso')body=`<div class="f"><span class="lb">¿En qué etapa está?</span><div class="opts" role="radiogroup">
+      ${ETAPAS.map(e=>{const cur=same&&t.etapa===e.id,why=cur?'':canEnter(t,'proceso',e.id);
+        return `<label class="opt ${why?'dis':''}"><input type="radio" name="etapa" value="${e.id}" ${cur?'checked':''} ${why?'disabled':''} required><span class="dot ${e.ext?'e':'m'}"></span><span class="lbl">${esc(e.name)}${why?`<span class="why">${esc(why)}</span>`:''}</span><span class="who2" style="${e.ext?'color:var(--ext-text)':'color:var(--muted)'}">${e.ext?'espera al proveedor':'con Marketing'}</span></label>`}).join('')}
+    </div></div>${manosField}`;
+  else if(col==='revision')body=`<div class="f"><span class="lb">¿Qué se está revisando?</span><div class="opts" role="radiogroup">
+      ${REVISIONES.map(e=>{const cur=same&&t.etapa===e.id,why=cur?'':canEnter(t,'revision',e.id);
+        return `<label class="opt ${why?'dis':''}"><input type="radio" name="etapa" value="${e.id}" ${cur?'checked':''} ${why?'disabled':''} required><span class="dot e"></span><span class="lbl">${esc(e.name)}${why?`<span class="why">${esc(why)}</span>`:''}</span></label>`}).join('')}
+    </div></div>${manosField}`;
+  else if(col==='produccion')body=manosField;
+  else body=`<div class="f"><span class="lb">¿Cómo terminó?</span><div class="opts" role="radiogroup">
+      ${FINALES.map(e=>{const cur=same&&t.etapa===e.id,why=cur?'':canEnter(t,'terminado',e.id);
+        return `<label class="opt ${why?'dis':''}"><input type="radio" name="etapa" value="${e.id}" ${cur?'checked':''} ${why?'disabled':''} required><span class="dot ${e.cancel?'x':'d'}"></span><span class="lbl">${esc(e.name)}${why?`<span class="why">${esc(why)}</span>`:''}</span></label>`}).join('')}
+    </div></div>
+    <div class="f"><label for="sfMot">Motivo <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input id="sfMot" name="motivo" value="${esc(same?t.motivo||'':'')}" placeholder="Ej.: el cliente desistió, sin presupuesto"></div>`;
+  dlg.className='mid';ui.openId=null;
+  dlg.innerHTML=`<form class="dlg" id="sf" autocomplete="off">
+    <h3>${esc(t.num||'')} ${esc(t.title)}</h3><p class="sub-h">${title}</p>
+    ${body}
+    <div class="f"><label for="sfDesc">Descripción</label><textarea id="sfDesc" name="desc" rows="3" placeholder="Qué pasó, detalles, links, contactos…">${esc(t.desc||'')}</textarea></div>
+    <div class="grid" style="max-width:360px"><div class="f"><label for="sfDate">Fecha del cambio</label><input id="sfDate" name="date" type="date" value="${todayISO()}" min="${min}" required></div>
+      <div class="f"><label for="sfTime">Hora</label><input id="sfTime" name="time" type="time" value="${nowHM()}" required></div></div>
+    <div class="dact"><button type="button" class="btn" data-act="full" data-id="${esc(t.id)}" style="margin-right:auto">Ver ficha completa</button><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">${same?'Guardar':'Mover'}</button></div>
+  </form>`;
+  dlg.showModal();
+  const f=$('#sf');
+  // "En manos de" solo aplica a etapas de terceros; "motivo" solo a canceladas
+  const sync=()=>{const v=(f.querySelector('[name=etapa]:checked')||{}).value;
+    const m=$('#sfManos');if(m&&col==='proceso'){const off=!v||v==='mkt';m.disabled=off;if(off)m.value=''}
+    const rv=col==='revision'&&REVISIONES.find(e=>e.id===v);if(m&&rv&&rv.manos&&!m.value)m.value=rv.manos;
+    const mo=$('#sfMot');if(mo){const off=v!=='cancelado';mo.disabled=off;mo.closest('.f').hidden=off}};
+  f.addEventListener('change',e=>{if(e.target.name==='etapa'){sync();const m=$('#sfManos');if(m&&!m.disabled)m.focus();const mo=$('#sfMot');if(mo&&!mo.disabled)mo.focus()}});sync();
+  const first=f.querySelector('[name=etapa]:checked')||f.querySelector('[name=etapa]:not(:disabled)')||$('#sfManos');if(first)first.focus();
+  // La descripción se guarda aunque el cambio de etapa no proceda
+  f.onsubmit=e=>{e.preventDefault();const fdt=new FormData(f),ch={col,etapa:fdt.get('etapa')||'',manos:fdt.get('manos')||'',motivo:fdt.get('motivo')||'',date:fdt.get('date'),time:fdt.get('time')};
+    const descChanged=saveDesc(t,fdt.get('desc'));
+    if(descChanged&&same&&(ch.etapa||'')===(t.etapa||'')&&ch.manos.trim()===(t.manos||'')&&ch.motivo.trim()===(t.motivo||'')){closeDlg();toast('Descripción guardada');return}
+    if(applyChange(id,ch))closeDlg()};
+}
+function saveDesc(t,v){v=v==null?(t.desc||''):String(v);if(v===(t.desc||''))return false;t.desc=v;persist(t.id);return true}
+// Mover a una columna: Recibido es directo; las demás preguntan
+// Si no hay ninguna opción permitida en esa columna, avisa y abre la ficha para resolver lo pendiente.
+function moveTo(id,col){
+  const t=TASKS.get(id);if(!t)return;
+  if(col==='recibido'){applyChange(id,{col,date:todayISO(),time:nowHM()});return}
+  if(t.col!==col){
+    const opts=VARIANTES[col]?VARIANTES[col].map(e=>e.id):[''];
+    const whys=opts.map(o=>canEnter(t,col,o));
+    if(whys.every(Boolean)){toast(whys[0]);openTask(id);return}
+  }
+  stageForm(id,col);
+}
+
+/* ================= Panel de tarea ================= */
+const dlg=$('#dlg');
+function closeDlg(){if(dlg.open)dlg.close();ui.openId=null}
+dlg.addEventListener('close',()=>{ui.openId=null});
+async function openTask(id,keepScroll){
+  const t=TASKS.get(id);if(!t)return;
+  ui.openId=id;
+  const I=info(t),subs=t.subs||[],sd=subs.filter(s=>s.done).length,today=todayISO(),dis=RO?'disabled':'';
+  const byIds=[...new Set((t.moves||[]).map(m=>m.by).filter(Boolean))];
+  let ps={};if(USER&&byIds.length){try{ps=await USER.profiles(byIds)}catch(e){}}
+  if(ui.openId!==id)return;
+  const lastDate=I.cur?I.cur.start:I.start;
+  const scroll=keepScroll&&dlg.open?dlg.scrollTop:0;
+  dlg.className='side';
+  dlg.innerHTML=`<form class="tp" id="tp" autocomplete="off">
+    <div class="tp-h"><span class="num">${esc(t.num||'')}</span>${t.empresa?empLabel(t.empresa):''}<button type="button" class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    <textarea class="ttl-in" data-f="title" rows="2" aria-label="Nombre de la tarea" ${dis}>${esc(t.title)}</textarea>
+    ${ui.askRev===id&&!RO?`<div class="ask">Todas las subtareas están listas. ¿Enviar a En revisión?<span class="sp"></span><button type="button" class="btn sm" data-act="revNo">Todavía no</button><button type="button" class="btn pri sm" data-act="revYes">Sí, enviar a revisión</button></div>`:''}
+    <div class="box">
+      <div>${stageCell(t)}${t.manos?` <span style="font-size:14px">en manos de <b>${esc(t.manos)}</b></span>`:''}${I.cancelled&&t.motivo?` <span style="font-size:14px">· ${esc(t.motivo)}</span>`:''}
+        <div class="muted" style="font-size:14px;margin-top:2px">${I.isDone?`Terminó el ${fdf(I.end)}${I.endTime?' a las '+I.endTime:''}, ${dur(I.totalH)} en total.`:`Desde el ${fd(lastDate)}${I.cur&&I.cur.startTime?' a las '+I.cur.startTime:''}, ${dur(I.cur?I.cur.hrs:0)} en esta etapa.`}</div></div>
+      ${RO?'':`<div class="mv"><span class="lb">Mover a</span>${COLS.filter(c=>c.id!==t.col).map(c=>`<button type="button" class="btn sm" data-act="moveTo" data-col="${c.id}">${esc(c.name)}</button>`).join('')}${t.col!=='recibido'?`<button type="button" class="btn sm" data-act="stage" data-id="${esc(t.id)}">${t.col==='produccion'?'Cambiar en manos de':t.col==='revision'?'Cambiar revisión':t.col==='terminado'?'Cambiar cómo terminó':'Cambiar etapa'}</button>`:''}</div>`}
+    </div>
+    <div class="grid">
+      <div class="f"><label for="fEmp">Empresa</label><select id="fEmp" data-f="empresa" ${dis}><option value="">Sin empresa</option>${CFG.empresas.map(e=>`<option ${e===t.empresa?'selected':''}>${esc(e)}</option>`).join('')}</select></div>
+      <div class="f"><label for="fTipo">Tipo</label>${tipoSelect(`id="fTipo" data-f="tipo" ${dis}`,t.tipo||'')}</div>
+      <div class="f"><label for="fEnt">Fecha de entrega</label><input id="fEnt" type="date" data-f="entrega" value="${esc(t.entrega||'')}" ${dis}></div>
+      <div class="f"><label>Ingreso</label><div class="ro">${fdf(I.start)}${I.startTime?' a las '+I.startTime:''} <span class="muted">(hace ${dias(dd(I.start,today))})</span></div></div>
+      <div class="f full"><label>Responsables de seguimiento</label><div class="pills">${CFG.people.map(p=>`<label class="pill"><input type="checkbox" data-f="resp" value="${esc(p)}" ${(t.resp||[]).includes(p)?'checked':''} ${dis}><span>${av(p)}${esc(p)}</span></label>`).join('')}</div></div>
+      <div class="f full"><label for="fDesc">Descripción</label><textarea id="fDesc" data-f="desc" placeholder="Detalles, medidas, links, contactos…" ${dis}>${esc(t.desc||'')}</textarea></div>
+    </div>
+    <div class="f"><span class="lb">Subtareas${subs.length?` · ${sd} de ${subs.length} completadas`:''}</span>
+      ${subs.length?`<div class="prog" aria-hidden="true"><i style="width:${sd/subs.length*100}%"></i></div>`:''}
+      <div class="subs">
+        ${subs.map((s,i)=>`<div class="sub ${s.done?'done':''}">
+          <input type="checkbox" data-sub="done" data-i="${i}" ${s.done?'checked':''} aria-label="Completada" ${dis}>
+          <input type="text" data-sub="t" data-i="${i}" value="${esc(s.t)}" aria-label="Subtarea" ${dis}>
+          <select data-sub="resp" data-i="${i}" aria-label="Responsable de la subtarea" ${dis}><option value="">Sin asignar</option>${CFG.people.map(p=>`<option ${p===s.resp?'selected':''}>${esc(p)}</option>`).join('')}</select>
+          <span class="d" title="${s.done?`Del ${fd(s.start)} al ${fd(s.doneAt)}`:`Desde el ${fd(s.start)}`}">${dias(Math.max(0,dd(s.start||today,s.doneAt||today)))}</span>
+          ${RO?'<span></span>':`<button type="button" class="x" style="font-size:18px;margin:0" data-act="subDel" data-i="${i}" aria-label="Eliminar subtarea">×</button>`}
+        </div>`).join('')}
+        ${RO?'':`<div class="subadd"><input id="subT" placeholder="Nueva subtarea" aria-label="Nueva subtarea"><select id="subR" aria-label="Responsable"><option value="">Sin asignar</option>${CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join('')}</select><button type="button" class="btn sm" data-act="subAdd">Agregar</button></div>`}
+      </div>
+    </div>
+    <div class="f"><span class="lb">Horas de Marketing${horasDe(t)?` · ${hrs(horasDe(t))} en total`:''}</span>
+      <div class="subs">
+        ${(t.horas||[]).map((h,i)=>`<div class="hrow"><b>${hrs(+h.h||0)}</b><span class="muted">${fd(h.d)}</span><span>${h.p?av(h.p)+' '+esc(h.p):''}</span><span class="muted">${esc(h.n||'')}</span>${RO?'<span></span>':`<button type="button" class="x" style="font-size:18px;margin:0" data-act="hrsDel" data-i="${i}" aria-label="Quitar horas">×</button>`}</div>`).join('')}
+        ${RO?'':`<div class="hadd"><input id="hrsH" type="number" min="0.25" step="0.25" placeholder="Horas" aria-label="Horas"><select id="hrsP" aria-label="Quién"><option value="">Sin asignar</option>${CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join('')}</select><input id="hrsD" type="date" value="${today}" aria-label="Fecha"><input id="hrsN" placeholder="Qué se hizo (opcional)" aria-label="Qué se hizo"><button type="button" class="btn sm" data-act="hrsAdd">Agregar</button></div>`}
+      </div>
+      <span class="hint">Solo el tiempo trabajado por Marketing. El tiempo esperando aprobaciones o a terceros se mide solo, en el recorrido.</span></div>
+    <div class="f"><span class="lb">Recorrido · ${dur(I.totalH)} en total · <span style="color:var(--mkt)">${dur(I.hm)} con Marketing</span> · <span style="color:var(--ext-text)">${dur(I.he)} esperando a terceros</span></span>
+      <div class="scroll"><table class="h"><thead><tr><th>Etapa</th><th>En manos de</th><th>Inicio</th><th>Fin</th><th class="n">Tiempo</th><th>Movió</th></tr></thead><tbody>
+      ${I.stays.map(s=>{const nm=s.done?finalOf(s.etapa).name:stageOf(s.key).name,cls=s.done?(s.etapa==='cancelado'?'x':'d'):s.ext?'e':s.key==='recibido'?'r':'m';
+        return `<tr><td><span class="stage"><span class="dot ${cls}"></span>${esc(nm)}</span></td><td>${esc(s.manos||s.motivo)}</td><td style="white-space:nowrap">${fdh(s.start,s.startTime)}</td><td style="white-space:nowrap">${s.done?'':s.end?fdh(s.end,s.endTime):'<span class="muted">en curso</span>'}</td><td class="n" style="white-space:nowrap">${s.done?'':`<b>${dur(s.hrs)}</b>`}</td><td class="muted">${s.byName?esc(s.byName):s.by?esc((ps[s.by]&&ps[s.by].name)||'Alguien'):'Carga inicial'}</td></tr>`}).join('')}
+      </tbody></table></div></div>
+    ${RO?'':`<div class="danger-zone" id="dz">${(t.moves||[]).length>1?'<button type="button" class="btn sm" data-act="undo">Deshacer último cambio</button>':''}<span class="sp"></span>${!ME||ME.admin?'<button type="button" class="btn sm danger" data-act="delAsk">Eliminar tarea</button>':''}</div>`}
+  </form>`;
+  if(!dlg.open)dlg.showModal();
+  dlg.scrollTop=scroll;
+}
+function cur(){return TASKS.get(ui.openId)}
+dlg.addEventListener('change',e=>{
+  const t=cur();if(!t||RO)return;const el=e.target,f=el.dataset.f,s=el.dataset.sub;
+  if(f==='resp'){t.resp=[...dlg.querySelectorAll('[data-f=resp]:checked')].map(x=>x.value);const added=ensureSubs(t);persist(t.id);
+    if(added){openTask(t.id,true);toast(`Se creó una subtarea para ${added.join(' y ')}. Escribe qué le toca a cada uno.`)}return}
+  if(f==='tipo'){const v=addTipo(el.value);if(v||el.tagName==='SELECT'){t.tipo=v;persist(t.id)}openTask(t.id,true);return}
+  if(f==='title'){const v=el.value.trim();if(!v){el.value=t.title;toast('La tarea necesita un nombre');return}t.title=v;persist(t.id);return}
+  if(f){t[f]=el.value;persist(t.id);if(f==='empresa')openTask(t.id,true);return}
+  if(s){const i=+el.dataset.i,sub=t.subs[i];if(!sub)return;
+    if(s==='done'){sub.done=el.checked;sub.doneAt=el.checked?todayISO():'';persist(t.id);
+      // Al completar la última subtarea, ofrece mandarla a revisión
+      ui.askRev=el.checked&&t.subs.every(x=>x.done)&&(t.col==='recibido'||t.col==='proceso')?t.id:null;
+      openTask(t.id,true)}
+    else if(s==='t'){const v=el.value.trim();if(v){sub.t=v;persist(t.id)}else el.value=sub.t}
+    else if(s==='resp'){sub.resp=el.value;persist(t.id)}}
+});
+dlg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='subT'){e.preventDefault();addSub()}
+  if(e.key==='Enter'&&['hrsH','hrsN'].includes(e.target.id)){e.preventDefault();addHoras()}
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.f==='title'){e.preventDefault();e.target.blur()}});
+dlg.addEventListener('submit',e=>{if(e.target.id==='tp')e.preventDefault()});
+function addHoras(){const t=cur(),h=parseFloat(($('#hrsH').value||'').replace(',','.'));if(!t)return;
+  if(!(h>0)){toast('Escribe cuántas horas');$('#hrsH').focus();return}
+  t.horas=[...(t.horas||[]),{h,p:$('#hrsP').value,d:$('#hrsD').value||todayISO(),n:$('#hrsN').value.trim()}];
+  persist(t.id);openTask(t.id,true);toast(`${hrs(h)} registradas en ${t.num||'la tarea'}`)}
+function addSub(){const t=cur(),inp=$('#subT');if(!t||!inp)return;const v=inp.value.trim();if(!v){inp.focus();return}
+  const r=$('#subR').value;
+  t.subs=[...(t.subs||[]),{t:v,resp:r,done:false,start:todayISO(),doneAt:''}];
+  if(r&&!(t.resp||[]).includes(r))t.resp=[...(t.resp||[]),r];
+  ui.askRev=null;
+  persist(t.id);openTask(t.id,true).then(()=>{const n=$('#subT');if(n)n.focus()})}
+
+/* ================= Formularios ================= */
+function newTaskForm(){
+  if(!CFG.people.length||!CFG.empresas.length){toast('Primero agrega personas y empresas en Ajustes');cfgForm();return}
+  dlg.className='mid';ui.openId=null;
+  dlg.innerHTML=`<form class="dlg" id="nf" autocomplete="off"><h3>Nueva tarea</h3>
+    <div class="grid">
+      <div class="f full"><label for="nTitle">Tarea</label><input id="nTitle" name="title" required placeholder="¿Qué hay que hacer?"></div>
+      <div class="f"><label for="nEmp">Empresa</label><select id="nEmp" name="empresa">${CFG.empresas.map(e=>`<option ${e===(ui.emp||CFG.empresas[0])?'selected':''}>${esc(e)}</option>`).join('')}</select></div>
+      <div class="f"><label for="nTipo">Tipo</label>${tipoSelect('id="nTipo" name="tipo"','')}</div>
+      <div class="f"><label for="nIng">Fecha de ingreso</label><input id="nIng" name="ingreso" type="date" value="${todayISO()}" required></div>
+      <div class="f"><label for="nIngH">Hora de ingreso</label><input id="nIngH" name="ingresoH" type="time" value="${nowHM()}" required></div>
+      <div class="f"><label for="nEnt">Fecha de entrega</label><input id="nEnt" name="entrega" type="date"></div>
+      <div class="f full"><label>Responsables de seguimiento</label><div class="pills">${CFG.people.map(p=>`<label class="pill"><input type="checkbox" name="resp" value="${esc(p)}" ${p===ui.me?'checked':''}><span>${av(p)}${esc(p)}</span></label>`).join('')}</div></div>
+      <div class="f full" id="nSubs"></div>
+    </div>
+    <p class="muted" style="margin:0;font-size:13px">Entra en Recibido. Después se abre la tarjeta para agregar descripción y más subtareas.</p>
+    <div class="dact"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Crear tarea</button></div></form>`;
+  dlg.showModal();$('#nTitle').focus();
+  // Con dos o más responsables, pide qué hace cada uno: será su subtarea
+  const nf=$('#nf'),box=$('#nSubs');
+  const syncSubs=()=>{const prev={};box.querySelectorAll('input').forEach(i=>{prev[i.name]=i.value});
+    const sel=[...nf.querySelectorAll('[name=resp]:checked')].map(x=>x.value);
+    box.innerHTML=sel.length>1?`<span class="lb">¿Qué hace cada uno? Se crea una subtarea por persona</span>`+sel.map(p=>{const n='sub_'+CFG.people.indexOf(p);return `<div class="mv">${av(p)}<input name="${n}" value="${esc(prev[n]||'')}" placeholder="Parte de ${esc(p)}" aria-label="Qué hace ${esc(p)}" style="flex:1"></div>`}).join(''):''};
+  nf.addEventListener('change',e=>{if(e.target.name==='resp')syncSubs()});syncSubs();
+  nf.onsubmit=e=>{e.preventDefault();const fdt=new FormData(e.target);const title=(fdt.get('title')||'').trim();if(!title)return;
+    const id=newId(),ing=fdt.get('ingreso')||todayISO(),ingH=fdt.get('ingresoH')||nowHM(),resp=fdt.getAll('resp');
+    const subs=resp.length>1?resp.map(p=>({t:(fdt.get('sub_'+CFG.people.indexOf(p))||'').trim()||`Parte de ${p}`,resp:p,done:false,start:ing,doneAt:''})):[];
+    TASKS.set(id,{id,num:nextNum(),title,empresa:fdt.get('empresa'),tipo:addTipo(fdt.get('tipo')),resp,entrega:fdt.get('entrega')||'',desc:'',subs,col:'recibido',etapa:'',manos:'',motivo:'',moves:[{col:'recibido',etapa:'',manos:'',date:ing,time:ingH,by:UID,byName:ui.me}],created:todayISO(),createdBy:UID});
+    persist(id);toast(`${TASKS.get(id).num} creada`);openTask(id)};
+}
+function cfgForm(){
+  dlg.className='mid';ui.openId=null;
+  const listEd=(k,label,ph)=>`<div class="f"><span class="lb">${label}</span><div class="rlist">${CFG[k].map((x,i)=>`<div class="row">${k==='people'?av(x):k==='empresas'?empLabel(x):''}<span>${esc(x)}</span><button type="button" class="btn sm danger" data-act="cfgDel" data-k="${k}" data-i="${i}">Quitar</button></div>`).join('')||'<span class="muted">Ninguna todavía.</span>'}</div>
+    <div class="mv"><input id="add-${k}" placeholder="${ph}" aria-label="${ph}"><button type="button" class="btn sm" data-act="cfgAdd" data-k="${k}">Agregar</button></div></div>`;
+  dlg.innerHTML=`<div class="dlg"><h3>Ajustes</h3>
+    ${listEd('people','Responsables (equipo de Marketing)','Nombre')}
+    <div class="f"><label for="cfgCoord">Coordinador</label><select id="cfgCoord"><option value="">Sin coordinador</option>${CFG.people.map(p=>`<option ${p===CFG.coord?'selected':''}>${esc(p)}</option>`).join('')}</select>
+      <span class="hint">Solo el coordinador envía tareas a cotización o producción y puede cancelarlas.</span></div>
+    ${listEd('empresas','Empresas','Nombre de la empresa')}
+    ${listEd('tipos','Tipos de tarea','Nuevo tipo')}
+    <p class="muted" style="margin:0;font-size:13px">Quitar una persona, empresa o tipo no cambia las tareas que ya lo tienen asignado. También puedes crear un tipo desde la tarea con "+ Otro tipo…". Los nombres de "en manos de" se crean al escribirlos.</p>
+    <div class="dact"><button type="button" class="btn" data-act="export">Ver respaldo</button>${MODE==='local'||isAdmin()?'<button type="button" class="btn" data-act="import">Cargar respaldo</button>':''}<button type="button" class="btn pri" data-act="close">Listo</button></div></div>`;
+  if(!dlg.open)dlg.showModal();
+}
+// Restaurar un respaldo pegado (solo en la versión local)
+function importForm(){
+  dlg.className='mid';ui.openId=null;
+  dlg.innerHTML=`<form class="dlg" id="imf"><h3>Cargar respaldo</h3>
+    <p class="muted" style="margin:0">Pega el texto de un respaldo (el que copiaste desde "Ver respaldo"). ${DB?'Agrega las tareas del respaldo a la base compartida, o las actualiza si ya están.':'Reemplaza todas las tareas que hay ahora en este navegador.'}</p>
+    <div class="f"><textarea id="imTxt" style="min-height:220px;font-size:12px" required placeholder='{"config": …, "tasks": […]}'></textarea></div>
+    <div class="dact"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Reemplazar datos</button></div></form>`;
+  dlg.showModal();
+  $('#imf').onsubmit=e=>{e.preventDefault();let d;
+    try{d=JSON.parse($('#imTxt').value)}catch(_){toast('El texto no es un respaldo válido. Copia el respaldo completo, desde la primera { hasta la última }.');return}
+    if(!d||!Array.isArray(d.tasks)||!d.config){toast('El texto no tiene el formato de un respaldo del tablero.');return}
+    setData(d.config,d.tasks.map(t=>({...t,id:t.id||newId()})));saveLocal();
+    if(DB){persistCfg();TASKS.forEach((_,id)=>persist(id))}
+    closeDlg();renderAll();toast(`Respaldo cargado: ${d.tasks.length} tareas`)};
+}
+
+/* ================= Eventos ================= */
+document.addEventListener('click',e=>{
+  const tb=e.target.closest('#tabs button');if(tb){ui.view=tb.dataset.view;renderAll();return}
+  const a=e.target.closest('[data-act]');
+  const cardEl=e.target.closest('.card');if(cardEl&&!a){openTask(cardEl.dataset.id);return}
+  const row=e.target.closest('[data-open]');if(row&&!a){openTask(row.dataset.open);return}
+  if(!a)return;
+  const t=cur();
+  switch(a.dataset.act){
+    case 'close':closeDlg();break;
+    case 'logout':if(SB)SB.auth.signOut().then(()=>location.reload());break;
+    case 'new':if(!RO)newTaskForm();break;
+    case 'cfg':cfgForm();break;
+    case 'full':{const x=TASKS.get(a.dataset.id),d=$('#sfDesc');if(x){if(d)saveDesc(x,d.value);openTask(x.id)}break}
+    case 'stage':{const x=TASKS.get(a.dataset.id);if(x)stageForm(x.id,x.col);break}
+    case 'moveTo':if(t)moveTo(t.id,a.dataset.col);if(t&&a.dataset.col==='recibido')openTask(t.id,true);break;
+    case 'revYes':if(t){ui.askRev=null;stageForm(t.id,'revision')}break;
+    case 'revNo':if(t){ui.askRev=null;openTask(t.id,true)}break;
+    case 'f':{const k=a.dataset.k;if(k==='mine')ui.mine=!ui.mine;else ui[k]=ui[k]===a.dataset.v?'':a.dataset.v;renderAll();break}
+    case 'clear':ui.mine=false;ui.emp='';ui.resp='';ui.q='';renderAll();break;
+    case 'order':ui.order=ui.order==='asc'?'desc':'asc';renderAll();break;
+    case 'rtab':ui.rTab=a.dataset.v;renderAll();break;
+    case 'rrange':{const v=a.dataset.v;if(v==='custom'&&!ui.rFrom){ui.rFrom=todayISO().slice(0,8)+'01';ui.rTo=todayISO()}ui.rRange=v;renderAll();break}
+    case 'rEmp':ui.rEmp=a.dataset.v;ui.rTab='empresa';renderAll();break;
+    case 'rPer':ui.rPer=a.dataset.v;ui.rTab='persona';renderAll();break;
+    case 'range':{const v=a.dataset.v;if(v==='custom'&&!ui.doneFrom){ui.doneFrom=todayISO().slice(0,8)+'01';ui.doneTo=todayISO()}ui.doneRange=v;renderAll();break}
+    case 'sort':{const k=a.dataset.k;if(ui.sortK===k)ui.sortDir=ui.sortDir==='asc'?'desc':'asc';else{ui.sortK=k;ui.sortDir=LCOLS.find(c=>c[0]===k)[2]}renderAll();break}
+    case 'undo':if(t&&(t.moves||[]).length>1){
+        // quita el cambio más reciente (por fecha) y deja la tarea donde estaba antes
+        const keep=t.moves.slice(),order=keep.map((m,i)=>({m,i})).sort((x,y)=>mKey(x.m).localeCompare(mKey(y.m))||x.i-y.i),last=order.pop();keep.splice(last.i,1);
+        const prev=normStep(order[order.length-1].m);t.moves=keep;t.col=prev.col;t.etapa=prev.etapa||'';t.manos=prev.manos||'';t.motivo=prev.motivo||'';
+        persist(t.id);openTask(t.id,true);toast('Último cambio deshecho')}break;
+    case 'subAdd':addSub();break;
+    case 'hrsAdd':addHoras();break;
+    case 'hrsDel':if(t){t.horas=t.horas.filter((_,i)=>i!==+a.dataset.i);persist(t.id);openTask(t.id,true)}break;
+    case 'subDel':if(t){t.subs=t.subs.filter((_,i)=>i!==+a.dataset.i);persist(t.id);openTask(t.id,true)}break;
+    case 'delAsk':$('#dz').innerHTML=`<span>¿Eliminar esta tarea y su recorrido? No se puede deshacer. Si no siguió, mejor muévela a Terminado como cancelada.</span><span class="sp"></span><button type="button" class="btn sm" data-act="delNo">Volver</button><button type="button" class="btn sm danger" data-act="delYes">Sí, eliminar</button>`;break;
+    case 'delNo':if(t)openTask(t.id,true);break;
+    case 'delYes':if(t){const n=t.num;closeDlg();removeTask(t.id);toast(`${n||'Tarea'} eliminada`)}break;
+    case 'cfgAdd':{const k=a.dataset.k,inp=$('#add-'+k),v=(inp.value||'').trim();if(!v)break;if(CFG[k].includes(v)){toast('Ya existe');break}CFG={...CFG,[k]:[...CFG[k],v]};persistCfg();cfgForm();break}
+    case 'cfgDel':{const k=a.dataset.k,i=+a.dataset.i;CFG={...CFG,[k]:CFG[k].filter((_,j)=>j!==i)};persistCfg();cfgForm();break}
+    case 'import':importForm();break;
+    case 'export':{const json=JSON.stringify({config:CFG,tasks:[...TASKS.values()]},null,2);dlg.innerHTML=`<div class="dlg"><h3>Respaldo</h3><p class="muted" style="margin:0">Copia este texto y guárdalo en un archivo para tener un respaldo de todas las tareas.</p><div class="f"><textarea readonly style="min-height:260px;font-size:12px">${esc(json)}</textarea></div><div class="dact"><button type="button" class="btn pri" data-act="close">Cerrar</button></div></div>`;break}
+  }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.matches('.card')||e.target.matches('[data-open]')||e.target.matches('tr[data-act]'))){e.preventDefault();e.target.click()}
+  if(e.key==='Enter'&&e.target.id&&e.target.id.startsWith('add-')){e.preventDefault();e.target.nextElementSibling.click()}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){ui.q=e.target.value;renderContent()}});
+document.addEventListener('change',e=>{
+  const id=e.target.id;
+  if(id==='me'){ui.me=e.target.value;renderAll()}
+  if(id==='cfgCoord'){CFG={...CFG,coord:e.target.value};persistCfg();toast(e.target.value?`Coordinador: ${e.target.value}`:'Sin coordinador')}
+  if(id==='hideDone'){ui.hideDone=e.target.checked;renderAll()}
+  if(id==='doneFrom'){ui.doneFrom=e.target.value;renderAll()}
+  if(id==='doneTo'){ui.doneTo=e.target.value;renderAll()}
+  if(id==='rFrom'){ui.rFrom=e.target.value;renderAll()}
+  if(id==='rTo'){ui.rTo=e.target.value;renderAll()}
+});
+// Arrastrar y soltar entre columnas
+let dragId=null;
+document.addEventListener('dragstart',e=>{const c=e.target.closest&&e.target.closest('.card');if(!c||RO)return;dragId=c.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',dragId);requestAnimationFrame(()=>c.classList.add('dragging'))});
+document.addEventListener('dragend',()=>{document.querySelectorAll('.dragging,.over').forEach(n=>n.classList.remove('dragging','over'));dragId=null});
+document.addEventListener('dragover',e=>{if(!dragId)return;
+  const b=$('#board');if(b){const r=b.getBoundingClientRect(),m=80;if(e.clientX>r.right-m)b.scrollLeft+=20;else if(e.clientX<r.left+m)b.scrollLeft-=20}const col=e.target.closest&&e.target.closest('.col');document.querySelectorAll('.col.over').forEach(n=>{if(n!==col)n.classList.remove('over')});if(!col)return;e.preventDefault();col.classList.add('over')});
+document.addEventListener('drop',e=>{if(!dragId)return;const col=e.target.closest&&e.target.closest('.col');if(!col)return;e.preventDefault();
+  const id=dragId,to=col.dataset.col,t=TASKS.get(id);col.classList.remove('over');dragId=null;if(!t||t.col===to)return;moveTo(id,to)});
+
+/* ================= Supabase (versión publicada) ================= */
+// Si config.js trae la dirección y la clave pública del proyecto, el tablero usa Supabase:
+// ingreso con correo y contraseña, datos compartidos y cambios en vivo. Cada persona entra con su nombre (tabla perfiles)
+// y la base solo deja modificar las tareas donde participa, salvo al administrador.
+const SB_LIB='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js';
+let SB=null,ME=null;
+const isAdmin=()=>!!(ME&&ME.admin);
+const canEdit=t=>!ME||ME.admin||involves(t,ME.nombre)||t.createdBy===ME.id;
+function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
+// Misma forma que la base de claude.ai, para no cambiar el resto del código
+function sbAdapter(){
+  const tb=c=>c==='tasks'?'tareas':'config',chk=({error})=>{if(error)throw error};
+  return {doc:path=>{const [c,id]=path.split('/');return {
+      set:body=>SB.from(tb(c)).upsert({id,data:body}).then(chk),
+      delete:()=>SB.from(tb(c)).delete().eq('id',id).then(chk)}},
+    collection:()=>({doc:()=>({id:crypto.randomUUID()})})};
+}
+async function sbLoad(){
+  const [c,t]=await Promise.all([SB.from('config').select('data').eq('id','main').maybeSingle(),SB.from('tareas').select('id,data')]);
+  if(c.error||t.error)throw c.error||t.error;
+  CFG=normCfg(c.data?c.data.data:null);
+  TASKS=new Map(t.data.map(r=>[r.id,{...normTask(clone(r.data)),id:r.id}]));
+}
+// Vuelve a leer todo (son pocas tareas) cuando alguien cambia algo o cuando la base rechaza un cambio
+let sbT=null;
+function sbReload(){clearTimeout(sbT);sbT=setTimeout(async()=>{
+  try{await sbLoad();renderAll();if(ui.openId&&dlg.open&&dlg.className==='side'&&!dlg.contains(document.activeElement))openTask(ui.openId,true)}
+  catch(e){MODE='caido';renderAll()}},400)}
+function loginView(msg){
+  $('#content').innerHTML=`<form class="login" id="lf"><h2>Ingresar</h2><p class="muted" style="margin:0">Usa el correo y la contraseña que te entregó el administrador.</p>
+    <div class="f"><label for="lfE">Correo</label><input id="lfE" type="email" autocomplete="username" required></div>
+    <div class="f"><label for="lfP">Contraseña</label><input id="lfP" type="password" autocomplete="current-password" required></div>
+    ${msg?`<p class="err">${esc(msg)}</p>`:''}
+    <button class="btn pri" type="submit">Entrar</button></form>`;
+  $('#lfE').focus();
+  $('#lf').onsubmit=async e=>{e.preventDefault();e.target.querySelector('button').disabled=true;
+    const {error}=await SB.auth.signInWithPassword({email:$('#lfE').value.trim(),password:$('#lfP').value});
+    if(error){loginView('Correo o contraseña incorrectos.');return}
+    sbStart()};
+}
+async function sbStart(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){MODE='login';renderAll();loginView();return}
+  const {data:p,error}=await SB.from('perfiles').select('id,nombre,admin').eq('id',session.user.id).maybeSingle();
+  if(error||!p){await SB.auth.signOut();MODE='login';renderAll();loginView('Tu usuario todavía no tiene acceso al tablero. Pide al administrador que te agregue.');return}
+  ME=p;UID=p.id;DB=sbAdapter();MODE='db';
+  try{await sbLoad()}catch(e){MODE='caido';renderAll();return}
+  renderAll();
+  SB.channel('cambios')
+    .on('postgres_changes',{event:'*',schema:'public',table:'tareas'},sbReload)
+    .on('postgres_changes',{event:'*',schema:'public',table:'config'},sbReload)
+    .subscribe();
+}
+
+/* ================= Inicio ================= */
+renderAll();
+(async function(){
+  const S=window.RUTA_SUPABASE;
+  if(S&&S.url&&S.key){try{await loadScript(SB_LIB);SB=supabase.createClient(S.url,S.key);await sbStart()}catch(e){MODE='caido';renderAll()}return}
+  const c=window.claude;
+  let db=null,user=null;
+  if(c&&typeof c.use==='function'){[db,user]=await Promise.all([c.use('db'),c.use('user')])}
+  USER=user;
+  if(user){UID=await user.id();const w=await user.can('data.write');if(w===false)RO=true}
+  if(!db){MODE='local';loadLocal();renderAll();return}
+  DB=db;MODE='db';
+  let gotCfg=false,gotTasks=false;
+  const ready=()=>{if(gotCfg&&gotTasks){renderAll();if(ui.openId&&dlg.open&&dlg.className==='side'&&!dlg.contains(document.activeElement))openTask(ui.openId,true)}};
+  const fail=()=>{MODE='caido';renderAll()};
+  db.doc('config/main').onSnapshot(s=>{if(s.exists)CFG=normCfg(clone(s.data()));gotCfg=true;ready()},fail);
+  db.collection('tasks').onSnapshot(s=>{TASKS=new Map(s.docs.map(d=>[d.id,{...normTask(clone(d.data())),id:d.id}]));gotTasks=true;ready()},fail);
+})();
+</script>
