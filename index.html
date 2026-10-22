@@ -324,8 +324,11 @@ function addTipo(v){v=matchName(v,CFG.tipos);if(v&&!CFG.tipos.includes(v)){CFG={
 document.addEventListener('change',e=>{const el=e.target;if(el.tagName!=='SELECT'||el.value!=='__new')return;e.stopImmediatePropagation();
   const inp=document.createElement('input');[...el.attributes].forEach(a=>inp.setAttribute(a.name,a.value));inp.placeholder='Nombre del nuevo tipo';inp.value='';
   el.replaceWith(inp);inp.focus()},true);
-function manosList(){const a=[];TASKS.forEach(t=>(t.moves||[]).forEach(m=>a.push(m.manos)));return uniq(a)}
+function manosList(){const a=[...CFG.people];TASKS.forEach(t=>(t.moves||[]).forEach(m=>a.push(teamName(m.manos))));return uniq(a)}
 function matchName(v,list){v=(v||'').trim().replace(/\s+/g,' ');if(!v)return '';return list.find(x=>x.toLowerCase()===v.toLowerCase())||v}
+// "En manos de" alguien del equipo: se escribe con su nombre exacto y cuenta como trabajo de Marketing, no de terceros
+const teamName=v=>matchName(v,CFG.people);
+const isTeam=v=>!!v&&CFG.people.includes(teamName(v));
 function nextNum(){let m=0;TASKS.forEach(t=>{const r=/^T(\d+)$/.exec(t.num||'');if(r)m=Math.max(m,+r[1])});return 'T'+String(m+1).padStart(2,'0')}
 // Acepta datos de versiones anteriores del tablero (7, 4 o 3 columnas) y los lleva a las 5 columnas actuales
 function normStep(o){
@@ -339,16 +342,16 @@ function normStep(o){
   if(c==='terminado')return {...o,etapa:e||'entregado'};
   return {...o,col:'recibido',etapa:''};
 }
-function normTask(t){const n=normStep(t);n.tipo=TIPO_MAP[t.tipo]||t.tipo||'';n.moves=(t.moves||[]).map(normStep);n.manos=t.manos||'';n.motivo=t.motivo||'';n.horas=t.horas||[];n.link=t.link||'';n.solicitante=t.solicitante||'';n.avisar=t.avisar||'';return n}
+function normTask(t){const n=normStep(t);n.tipo=TIPO_MAP[t.tipo]||t.tipo||'';n.moves=(t.moves||[]).map(m=>({...normStep(m),manos:teamName(m.manos)}));n.manos=teamName(t.manos);n.motivo=t.motivo||'';n.horas=t.horas||[];n.link=t.link||'';n.solicitante=t.solicitante||'';n.avisar=t.avisar||'';return n}
 
 /* ================= Tiempos ================= */
 // Cada cambio abre una estadía (etapa + en manos de); termina cuando empieza la siguiente.
 function info(t){
   const ms=(t.moves||[]).map((m,i)=>({...m,i})).sort((a,b)=>mKey(a).localeCompare(mKey(b))||a.i-b.i);
   const today=todayISO(),now=Date.now();
-  const stays=ms.map((m,i)=>{const nx=ms[i+1],end=nx?nx.date:'',k=stageKey(m),st=stageOf(k);
-    return {key:k,col:m.col,etapa:m.etapa,manos:m.manos||'',motivo:m.motivo||'',start:m.date,startTime:m.time||'',end,endTime:nx?nx.time||'':'',by:m.by,byName:m.byName||'',
-      days:st.done?0:Math.max(0,dd(m.date,end||today)),t0:tsOf(m.date,m.time),t1:nx?tsOf(nx.date,nx.time):now,hrs:st.done?0:Math.max(0,((nx?tsOf(nx.date,nx.time):now)-tsOf(m.date,m.time))/36e5),ext:!!st.ext,done:!!st.done}});
+  const stays=ms.map((m,i)=>{const nx=ms[i+1],end=nx?nx.date:'',k=stageKey(m),st=stageOf(k),ext=!!st.ext&&!isTeam(m.manos);
+    return {key:k,col:m.col,etapa:m.etapa,manos:teamName(m.manos),motivo:m.motivo||'',start:m.date,startTime:m.time||'',end,endTime:nx?nx.time||'':'',by:m.by,byName:m.byName||'',
+      days:st.done?0:Math.max(0,dd(m.date,end||today)),t0:tsOf(m.date,m.time),t1:nx?tsOf(nx.date,nx.time):now,hrs:st.done?0:Math.max(0,((nx?tsOf(nx.date,nx.time):now)-tsOf(m.date,m.time))/36e5),ext,done:!!st.done}});
   const cur=stays[stays.length-1];
   const start=ms[0]?ms[0].date:(t.created||today),startTime=ms[0]?ms[0].time||'':'';
   const isDone=t.col==='terminado';
@@ -408,7 +411,7 @@ const pendSubs=t=>(t.subs||[]).filter(s=>!s.done);
 // Quién tiene la tarea ahora: en etapas de terceros, el indicado; con Marketing, quienes tienen subtareas pendientes (o los responsables)
 function enManos(t){
   if(t.col==='terminado')return '';
-  if(stageOf(stageKey(t)).ext)return t.manos||'';
+  if(stageOf(stageKey(t)).ext)return teamName(t.manos);
   const ps=uniq(pendSubs(t).map(s=>s.resp));
   return (ps.length?ps:t.resp||[]).join(', ');
 }
@@ -514,10 +517,10 @@ function renderContent(){
 /* ---------- Tablero ---------- */
 // Etiqueta clicable de la tarjeta: abre la ventana para cambiar la variante o "en manos de"
 function etqBtn(t){
-  const dis=RO?'disabled':'',arrow=RO?'':ICON.down;
-  if(t.col==='proceso'){const e=etapaOf(t.etapa);return `<button class="etq ${e.ext?'e':'m'}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar etapa"><span class="dot ${e.ext?'e':'m'}"></span>${esc(e.name)}${arrow}</button>`}
-  if(t.col==='revision')return `<button class="etq e" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar tipo de revisión"><span class="dot e"></span>${esc(revOf(t.etapa).name)}${arrow}</button>`;
-  if(t.col==='produccion')return `<button class="etq e" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar en manos de quién"><span class="dot e"></span>${t.manos?`<span class="w">En manos de</span> <b>${esc(t.manos)}</b>`:'¿En manos de quién?'}${arrow}</button>`;
+  const dis=RO?'disabled':'',arrow=RO?'':ICON.down,x=isTeam(t.manos)?'m':'e';
+  if(t.col==='proceso'){const e=etapaOf(t.etapa);return `<button class="etq ${e.ext?x:'m'}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar etapa"><span class="dot ${e.ext?x:'m'}"></span>${esc(e.name)}${arrow}</button>`}
+  if(t.col==='revision')return `<button class="etq ${x}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar tipo de revisión"><span class="dot ${x}"></span>${esc(revOf(t.etapa).name)}${arrow}</button>`;
+  if(t.col==='produccion')return `<button class="etq ${x}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar en manos de quién"><span class="dot ${x}"></span>${t.manos?`<span class="w">En manos de</span> <b>${esc(teamName(t.manos))}</b>`:'¿En manos de quién?'}${arrow}</button>`;
   if(t.col==='terminado'){const f=finalOf(t.etapa);return `<button class="etq ${f.cancel?'x':'d'}" data-act="stage" data-id="${esc(t.id)}" ${dis} title="Cambiar"><span class="dot ${f.cancel?'x':'d'}"></span>${esc(f.name)}${arrow}</button>`}
   return '';
 }
@@ -560,7 +563,7 @@ function boardView(){
 /* ---------- Lista ---------- */
 const LCOLS=[['num','Nº','asc'],['title','Tarea','asc'],['empresa','Empresa','asc'],['etapa','Estado','asc'],['manos','En manos de','asc'],['resp','Responsables','asc'],['ingreso','Ingreso','asc'],['dias','En etapa','desc'],['entrega','Entrega','asc']];
 function sortVal(t,k){const I=info(t);return k==='num'?parseInt((t.num||'').slice(1),10)||0:k==='title'?t.title.toLowerCase():k==='empresa'?t.empresa||'':k==='etapa'?STAGES.findIndex(s=>s.id===stageKey(t)):k==='manos'?(enManos(t)||'~'):k==='resp'?(t.resp||[]).join(','):k==='ingreso'?I.start:k==='dias'?(I.isDone?-1:I.days):t.entrega||'9999'}
-function stageDotCls(t){if(t.col==='terminado')return t.etapa==='cancelado'?'x':'d';const s=stageOf(stageKey(t));return s.ext?'e':t.col==='recibido'?'r':'m'}
+function stageDotCls(t){if(t.col==='terminado')return t.etapa==='cancelado'?'x':'d';const s=stageOf(stageKey(t));return s.ext&&!isTeam(t.manos)?'e':t.col==='recibido'?'r':'m'}
 function stageCell(t){return `<span class="stage"><span class="dot ${stageDotCls(t)}"></span>${esc(placeName(t))}</span>`}
 function listView(){
   const ts=[...TASKS.values()].filter(t=>visible(t)&&!(ui.hideDone&&t.col==='terminado')).sort((a,b)=>{const x=sortVal(a,ui.sortK),y=sortVal(b,ui.sortK);const r=typeof x==='number'?x-y:String(x).localeCompare(String(y),'es');return (ui.sortDir==='asc'?r:-r)||byNum(a,b)});
@@ -628,7 +631,8 @@ function resGeneral({X,inR,per}){
   const open=X.filter(x=>!x.I.isDone),ext=open.filter(x=>x.I.ext).length;
   const done=X.filter(x=>x.doneIn).length,canc=X.filter(x=>x.cancIn).length,h=X.reduce((s,x)=>s+sumHs(x.hs),0);
   const stale=open.filter(x=>x.I.days>=STALE).sort((p,q)=>q.I.days-p.I.days);
-  const closed=[];X.forEach(x=>{if(!x.I.cancelled)x.I.stays.forEach(s=>{if(s.end&&!s.done&&inR(s.end))closed.push(s)})});
+  // Etapas de menos de 5 minutos son correcciones (o la carga inicial): no cuentan en los promedios
+  const closed=[];X.forEach(x=>{if(!x.I.cancelled)x.I.stays.forEach(s=>{if(s.end&&!s.done&&inR(s.end)&&s.hrs>=5/60)closed.push(s)})});
   const byStage=STAGES.filter(s=>!s.done).map(st=>{const ds=closed.filter(s=>s.key===st.id).map(s=>s.hrs);return {st,n:ds.length,avg:avg(ds),max:ds.length?Math.max(...ds):0}});
   const byManos=uniq(closed.filter(s=>s.ext&&s.manos).map(s=>s.manos)).map(m=>{const ss=closed.filter(s=>s.manos===m);return {m,n:ss.length,avg:avg(ss.map(s=>s.hrs)),now:open.filter(x=>x.t.manos===m).length}}).sort((p,q)=>q.avg-p.avg);
   const fin=X.filter(x=>x.doneIn);
