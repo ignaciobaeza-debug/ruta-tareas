@@ -90,6 +90,8 @@ nav.tabs button.on{color:#fff;border-color:#fff}
 .manos b{font-weight:600}
 .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
 .meta .m{display:inline-flex;gap:3px;align-items:center;white-space:nowrap}
+.m.lnk{color:var(--mkt);text-decoration:none;border-radius:4px}.m.lnk:hover{text-decoration:underline}.m.lnk:focus-visible{outline:2px solid var(--now);outline-offset:2px}
+.lnkrow{display:flex;gap:6px;align-items:center}.lnkrow input{flex:1;min-width:0}
 .m.late{color:var(--late)}.m.stale{color:var(--ext-text)}.m.ok{color:var(--done)}
 .avs{display:flex}
 .av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;flex:none;box-shadow:0 0 0 2px var(--panel)}
@@ -271,6 +273,7 @@ const ICON={
   check:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3"/><path d="M5 8.2l2 2 4-4.4"/></svg>',
   cal:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5.5 1.5v3M10.5 1.5v3"/></svg>',
   clock:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.6"/></svg>',
+  link:'<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2.3-2.3a2.8 2.8 0 0 0-4-4l-1 1"/><path d="M9.2 6.8a2.8 2.8 0 0 0-4 0L2.9 9.1a2.8 2.8 0 0 0 4 4l1-1"/></svg>',
   down:'<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>',
 };
 
@@ -336,7 +339,7 @@ function normStep(o){
   if(c==='terminado')return {...o,etapa:e||'entregado'};
   return {...o,col:'recibido',etapa:''};
 }
-function normTask(t){const n=normStep(t);n.tipo=TIPO_MAP[t.tipo]||t.tipo||'';n.moves=(t.moves||[]).map(normStep);n.manos=t.manos||'';n.motivo=t.motivo||'';n.horas=t.horas||[];return n}
+function normTask(t){const n=normStep(t);n.tipo=TIPO_MAP[t.tipo]||t.tipo||'';n.moves=(t.moves||[]).map(normStep);n.manos=t.manos||'';n.motivo=t.motivo||'';n.horas=t.horas||[];n.link=t.link||'';n.solicitante=t.solicitante||'';n.avisar=t.avisar||'';return n}
 
 /* ================= Tiempos ================= */
 // Cada cambio abre una estadía (etapa + en manos de); termina cuando empieza la siguiente.
@@ -402,6 +405,14 @@ function ensureSubs(t){
   return added.length?added:false;
 }
 const pendSubs=t=>(t.subs||[]).filter(s=>!s.done);
+// Quién tiene la tarea ahora: en etapas de terceros, el indicado; con Marketing, quienes tienen subtareas pendientes (o los responsables)
+function enManos(t){
+  if(t.col==='terminado')return '';
+  if(stageOf(stageKey(t)).ext)return t.manos||'';
+  const ps=uniq(pendSubs(t).map(s=>s.resp));
+  return (ps.length?ps:t.resp||[]).join(', ');
+}
+const subsCell=t=>{const ss=t.subs||[],n=ss.filter(s=>s.done).length;return ss.length?`<span class="${n===ss.length?'':'muted'}">${n}/${ss.length}</span>`:'<span class="muted">–</span>'};
 // Quien creó la tarea (por usuario en la versión publicada, por nombre en la local)
 const isCreator=t=>!!((UID&&t.createdBy===UID)||(t.createdByName&&t.createdByName===ui.me));
 // Devuelve por qué la persona de "Yo soy" no puede llevar la tarea a ese lugar, o '' si puede.
@@ -446,7 +457,7 @@ function visible(t){
   if(ui.mine&&ui.me&&!involves(t,ui.me))return false;
   if(ui.emp&&t.empresa!==ui.emp)return false;
   if(ui.resp&&!involves(t,ui.resp))return false;
-  if(ui.q){const q=ui.q.toLowerCase();const hay=[t.num,t.title,t.desc,t.tipo,t.manos,t.motivo,...(t.subs||[]).map(s=>s.t)].join(' ').toLowerCase();if(!hay.includes(q))return false}
+  if(ui.q){const q=ui.q.toLowerCase();const hay=[t.num,t.title,t.desc,t.tipo,t.manos,t.motivo,t.solicitante,...(t.subs||[]).map(s=>s.t)].join(' ').toLowerCase();if(!hay.includes(q))return false}
   return true;
 }
 const byNum=(a,b)=>(a.num||'').localeCompare(b.num||'',undefined,{numeric:true});
@@ -470,9 +481,12 @@ function renderAll(){
   $('#me').innerHTML=ME?`<option>${esc(ME.nombre)}</option>`:CFG.people.length?CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join(''):'<option>Sin personas</option>';
   $('#me').disabled=!!ME;
   const off=MODE==='login';
+  if(isObs()&&ui.view==='resumen')ui.view='tablero';
+  $('#tabs [data-view=resumen]').hidden=isObs();
   $('#tabs').hidden=off;$('.who').hidden=off;$('#newBtn').hidden=RO||off;$('#cfgBtn').hidden=RO||off||(ME&&!ME.admin);$('#outBtn').hidden=!ME;
   $('#note').innerHTML=MODE==='local'?`<div class="note gut">Versión local de prueba: los cambios se guardan solo en este navegador. Elige tu nombre en "Yo soy" para que quede registrado quién mueve cada tarea, y haz respaldos desde Ajustes.</div>`
     :MODE==='caido'?`<div class="note gut">Se perdió la conexión con la base de datos. Recarga la página para seguir trabajando.</div>`
+    :isObs()?`<div class="note gut">Vista de seguimiento: aquí ves en qué etapa está cada solicitud a Marketing, en manos de quién y el link del material. Haz clic en una tarjeta para ver su detalle.</div>`
     :RO&&MODE==='db'?`<div class="note gut">Puedes ver el tablero, pero no editarlo. Para mover o crear tareas, pide acceso como colaborador.</div>`:'';
   renderTools();renderContent();savePrefs();
 }
@@ -480,7 +494,7 @@ function renderTools(){
   const fchip=(k,v,label)=>{const on=k==='mine'?ui.mine:ui[k]===v;return `<button class="fchip ${on?'on':''}" data-act="f" data-k="${k}" data-v="${esc(v)}" aria-pressed="${on}">${label}</button>`};
   if(ui.view==='resumen'||MODE==='login'){$('#tools').innerHTML='';return}
   $('#tools').innerHTML=`
-    ${ui.me?fchip('mine','','Mis tareas'):''}
+    ${ui.me&&!isObs()?fchip('mine','','Mis tareas'):''}
     <span class="vsep"></span>
     <div class="fgroup"><span class="lab">Empresa</span>${CFG.empresas.map(e=>fchip('emp',e,esc(e))).join('')}</div>
     <span class="vsep"></span>
@@ -514,14 +528,16 @@ function card(t){
     <div class="lbls">${t.empresa?empLabel(t.empresa):''}${t.tipo?`<span class="tipo">${esc(t.tipo)}</span>`:''}</div>
     <h3><span class="num">${esc(t.num||'')}</span>${esc(t.title)}</h3>
     ${t.col!=='recibido'?`<div>${etqBtn(t)}</div>`:''}
-    ${(t.col==='proceso'||t.col==='revision')&&t.manos?`<div class="manos">En manos de <b>${esc(t.manos)}</b></div>`:''}
+    ${t.solicitante?`<div class="manos">Solicita <b>${esc(t.solicitante)}</b></div>`:''}
+    ${t.col!=='produccion'&&enManos(t)?`<div class="manos">En manos de <b>${esc(enManos(t))}</b></div>`:''}
     ${I.cancelled&&t.motivo?`<div class="manos">Motivo: ${esc(t.motivo)}</div>`:''}
     <div class="meta"><span class="avs">${(t.resp||[]).map(av).join('')}</span><span class="sp"></span>
+      ${t.link?`<a class="m lnk" data-act="link" href="${esc(t.link)}" target="_blank" rel="noopener" title="Abrir material: ${esc(t.link)}">${ICON.link}Material</a>`:''}
       ${subs.length?`<span class="m ${sd===subs.length?'ok':''}" title="Subtareas completadas">${ICON.check}${sd}/${subs.length}</span>`:''}
       ${subs.length&&sd<subs.length&&!I.isDone?(()=>{const ps=uniq(pendSubs(t).map(s=>s.resp));return ps.length?`<span class="pend" title="Falta la parte de: ${esc(ps.join(', '))}">${ps.map(p=>av(p).replace('class="av"','class="av xs"')).join('')}</span>`:''})():''}
       ${t.entrega&&!I.isDone?`<span class="m ${late?'late':''}" title="${late?'Atrasada, entrega':'Entrega'} ${fdf(t.entrega)}">${ICON.cal}${fd(t.entrega)}</span>`:''}
       <span class="m" title="Fecha de ingreso">ingresó ${fd(I.start)}</span>
-      ${horasDe(t)?`<span class="m" title="Horas de Marketing">${hrs(horasDe(t))}</span>`:''}
+      ${horasDe(t)&&!isObs()?`<span class="m" title="Horas de Marketing">${hrs(horasDe(t))}</span>`:''}
       ${I.isDone?`<span class="m ${I.cancelled?'':'ok'}" title="Duración total">${dur(I.totalH)}</span>`:`<span class="m ${I.days>=STALE?'stale':''}" title="Tiempo en la etapa actual">${ICON.clock}${I.days?I.days+' d':dur(I.cur?I.cur.hrs:0)}</span>`}
     </div></article>`;
 }
@@ -543,7 +559,7 @@ function boardView(){
 
 /* ---------- Lista ---------- */
 const LCOLS=[['num','Nº','asc'],['title','Tarea','asc'],['empresa','Empresa','asc'],['etapa','Estado','asc'],['manos','En manos de','asc'],['resp','Responsables','asc'],['ingreso','Ingreso','asc'],['dias','En etapa','desc'],['entrega','Entrega','asc']];
-function sortVal(t,k){const I=info(t);return k==='num'?parseInt((t.num||'').slice(1),10)||0:k==='title'?t.title.toLowerCase():k==='empresa'?t.empresa||'':k==='etapa'?STAGES.findIndex(s=>s.id===stageKey(t)):k==='manos'?(t.manos||'~'):k==='resp'?(t.resp||[]).join(','):k==='ingreso'?I.start:k==='dias'?(I.isDone?-1:I.days):t.entrega||'9999'}
+function sortVal(t,k){const I=info(t);return k==='num'?parseInt((t.num||'').slice(1),10)||0:k==='title'?t.title.toLowerCase():k==='empresa'?t.empresa||'':k==='etapa'?STAGES.findIndex(s=>s.id===stageKey(t)):k==='manos'?(enManos(t)||'~'):k==='resp'?(t.resp||[]).join(','):k==='ingreso'?I.start:k==='dias'?(I.isDone?-1:I.days):t.entrega||'9999'}
 function stageDotCls(t){if(t.col==='terminado')return t.etapa==='cancelado'?'x':'d';const s=stageOf(stageKey(t));return s.ext?'e':t.col==='recibido'?'r':'m'}
 function stageCell(t){return `<span class="stage"><span class="dot ${stageDotCls(t)}"></span>${esc(placeName(t))}</span>`}
 function listView(){
@@ -556,7 +572,7 @@ function listView(){
     <td><b>${esc(t.title)}</b>${(t.subs||[]).length?` <span class="muted" style="font-size:13px">${t.subs.filter(s=>s.done).length}/${t.subs.length} subtareas</span>`:''}</td>
     <td>${t.empresa?empLabel(t.empresa):''}</td>
     <td>${stageCell(t)}</td>
-    <td>${esc(t.manos||'')}</td>
+    <td>${esc(enManos(t))}</td>
     <td><span class="avs">${(t.resp||[]).map(av).join('')}</span></td>
     <td style="white-space:nowrap">${fd(I.start)} <span class="muted" style="font-size:13px">hace ${dias(dd(I.start,today))}</span></td>
     <td class="n">${I.isDone?'<span class="muted">terminada</span>':`<b style="${I.days>=STALE?'color:var(--ext-text)':''}">${I.days}</b>`}</td>
@@ -594,8 +610,8 @@ function resumenView(){
 }
 // Fila de tarea abierta, compartida por las pestañas
 function openRows(xs,showEmp){
-  const heads=['Nº','Tarea',...(showEmp?['Empresa']:[]),'Estado','En manos de','Responsables',['En esta etapa']];
-  return tbl(heads,xs.sort((x,y)=>byNum(x.t,y.t)).map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td>${showEmp?`<td>${t.empresa?empLabel(t.empresa):''}</td>`:''}<td>${stageCell(t)}</td><td>${esc(t.manos||'')}</td><td><span class="avs">${(t.resp||[]).map(av).join('')}</span></td><td class="n" style="white-space:nowrap"><b style="${I.days>=STALE?'color:var(--ext-text)':''}">${dur(I.cur?I.cur.hrs:0)}</b></td></tr>`));
+  const heads=['Nº','Tarea',...(showEmp?['Empresa']:[]),'Estado','En manos de','Responsables',['Subtareas'],['En esta etapa']];
+  return tbl(heads,xs.sort((x,y)=>byNum(x.t,y.t)).map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td>${showEmp?`<td>${t.empresa?empLabel(t.empresa):''}</td>`:''}<td>${stageCell(t)}</td><td>${esc(enManos(t))}</td><td><span class="avs">${(t.resp||[]).map(av).join('')}</span></td><td class="n">${subsCell(t)}</td><td class="n" style="white-space:nowrap"><b style="${I.days>=STALE?'color:var(--ext-text)':''}">${dur(I.cur?I.cur.hrs:0)}</b></td></tr>`));
 }
 function doneRows(xs,showEmp){
   return tbl(['Nº','Tarea',...(showEmp?['Empresa']:[]),'Tipo','Cómo terminó','Terminó',['Tiempo total']],xs.sort((x,y)=>y.I.end.localeCompare(x.I.end)).map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td>${showEmp?`<td>${t.empresa?empLabel(t.empresa):''}</td>`:''}<td>${esc(t.tipo||'')}</td><td>${stageCell(t)}</td><td>${fd(I.end)}</td><td class="n">${dur(I.totalH)}</td></tr>`));
@@ -616,6 +632,10 @@ function resGeneral({X,inR,per}){
   const byStage=STAGES.filter(s=>!s.done).map(st=>{const ds=closed.filter(s=>s.key===st.id).map(s=>s.hrs);return {st,n:ds.length,avg:avg(ds),max:ds.length?Math.max(...ds):0}});
   const byManos=uniq(closed.filter(s=>s.ext&&s.manos).map(s=>s.manos)).map(m=>{const ss=closed.filter(s=>s.manos===m);return {m,n:ss.length,avg:avg(ss.map(s=>s.hrs)),now:open.filter(x=>x.t.manos===m).length}}).sort((p,q)=>q.avg-p.avg);
   const fin=X.filter(x=>x.doneIn);
+  // Subtareas: pendientes ahora (tareas abiertas) y completadas en el período (tareas no canceladas)
+  const pend=open.flatMap(x=>pendSubs(x.t).map(s=>({s,p:s.resp||'Sin asignar',x})));
+  const hechas=X.filter(x=>!x.I.cancelled).flatMap(x=>(x.t.subs||[]).filter(s=>s.done&&inR(s.doneAt)).map(s=>({s,p:s.resp||'Sin asignar',x})));
+  const subPpl=[...CFG.people.filter(p=>pend.some(y=>y.p===p)||hechas.some(y=>y.p===p)),...uniq([...pend,...hechas].map(y=>y.p)).filter(p=>!CFG.people.includes(p))];
   const byTipo=uniq(fin.map(x=>x.t.tipo||'Sin tipo')).map(tp=>{const is=fin.filter(x=>(x.t.tipo||'Sin tipo')===tp).map(x=>x.I);return {tp,n:is.length,tot:avg(is.map(i=>i.totalH)),m:avg(is.map(i=>i.hm)),e:avg(is.map(i=>i.he)),r:avg(is.map(i=>i.revs))}}).sort((p,q)=>q.n-p.n);
   return `<div class="cards4">
     ${kpi(open.length,plural(open.length,'Tarea abierta','Tareas abiertas'),'Ahora')}
@@ -623,8 +643,11 @@ function resGeneral({X,inR,per}){
     ${kpi(ext,'Esperando a terceros','Cotización, producción o revisión','--ext-text')}
     ${kpi(done,'Terminadas',`Entregadas, publicadas o recepcionadas ${per}${canc?`. Además ${canc} ${plural(canc,'cancelada','canceladas')}`:''}`,'--done')}
     ${kpi(hrs(h),'Horas de Marketing',`Registradas ${per}`)}
+    ${kpi(pend.length,plural(pend.length,'Subtarea pendiente','Subtareas pendientes'),`Ahora. ${hechas.length} ${plural(hechas.length,'completada','completadas')} ${per}`)}
   </div>
-  ${sec('Estancadas',`Tareas abiertas con ${STALE} días o más en la misma etapa.`,stale.length?`<div class="scroll"><table class="t"><tbody>${stale.map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td><td>${t.empresa?empLabel(t.empresa):''}</td><td>${stageCell(t)}</td><td>${esc(t.manos||'')}</td><td class="n"><b style="color:var(--ext-text)">${dias(I.days)}</b></td></tr>`).join('')}</tbody></table></div>`:'','Ninguna. Todas las tareas abiertas han cambiado de etapa en la última semana.')}
+  ${sec('Subtareas por persona',`Lo que tiene pendiente cada uno en tareas abiertas, y lo que completó ${per}. Haz clic en una persona para ver su detalle.`,subPpl.length?tbl(['Persona',['Pendientes'],['En tareas'],['La más antigua'],['Completadas']],subPpl.map(p=>{const ps=pend.filter(y=>y.p===p),old=ps.length?Math.max(...ps.map(y=>dd(y.s.start||todayISO(),todayISO()))):0;
+    return `<tr class="click" data-act="rPer" data-v="${esc(p)}" tabindex="0"><td>${perCell(p)}</td><td class="n"><b>${ps.length||'–'}</b></td><td class="n">${new Set(ps.map(y=>y.x.t.id)).size||'–'}</td><td class="n" style="${old>=STALE?'color:var(--ext-text)':''}">${ps.length?dias(Math.max(0,old)):'–'}</td><td class="n">${hechas.filter(y=>y.p===p).length||'–'}</td></tr>`})):'','No hay subtareas pendientes ni completadas en el período.')}
+  ${sec('Estancadas',`Tareas abiertas con ${STALE} días o más en la misma etapa.`,stale.length?`<div class="scroll"><table class="t"><tbody>${stale.map(({t,I})=>`<tr class="click" data-open="${esc(t.id)}" tabindex="0"><td class="muted">${esc(t.num||'')}</td><td><b>${esc(t.title)}</b></td><td>${t.empresa?empLabel(t.empresa):''}</td><td>${stageCell(t)}</td><td>${esc(enManos(t))}</td><td class="n">${subsCell(t)}</td><td class="n"><b style="color:var(--ext-text)">${dias(I.days)}</b></td></tr>`).join('')}</tbody></table></div>`:'','Ninguna. Todas las tareas abiertas han cambiado de etapa en la última semana.')}
   <div class="cols2">
   ${sec('Cuánto dura cada etapa',`Tiempo promedio en cada etapa antes de pasar a la siguiente (etapas que terminaron ${per}).`,tbl(['Etapa',['Veces'],['Promedio'],['Máximo']],byStage.map(x=>`<tr><td><span class="stage">${stageDot(x.st)}${esc(x.st.name)}</span></td><td class="n">${x.n}</td><td class="n"><b>${x.n?dur(x.avg):'–'}</b></td><td class="n">${x.n?dur(x.max):'–'}</td></tr>`)))}
   ${sec('En manos de terceros','Cuánto demora, en promedio, cada proveedor, cliente o área cuando la tarea está con ellos.',byManos.length?tbl(['En manos de',['Veces'],['Promedio'],['Ahora tiene']],byManos.map(x=>`<tr><td><b>${esc(x.m)}</b></td><td class="n">${x.n}</td><td class="n"><b>${dur(x.avg)}</b></td><td class="n">${x.now}</td></tr>`)):'',`No hay etapas de terceros terminadas ${per} con "en manos de" indicado.`)}
@@ -659,7 +682,7 @@ function resEmpresa({X,per}){
   ${sec('Por tipo de tarea',`Tareas con actividad ${per}.`,tipoRows(xs),`Sin actividad ${per}.`)}
   ${sec('Terminadas',`Tareas terminadas ${per}.`,xs.some(x=>x.doneIn)?doneRows(xs.filter(x=>x.doneIn),false):'',`No hay tareas terminadas ${per}.`)}`;
 }
-function resPersona({X,per}){
+function resPersona({X,inR,per}){
   const hs=X.flatMap(x=>x.hs.map(h=>({...h,p:h.p||'Sin asignar',e:x.t.empresa||'Sin empresa',tipo:x.t.tipo||'Sin tipo',x})));
   const ppl=[...CFG.people,...uniq(hs.map(h=>h.p)).filter(p=>!CFG.people.includes(p))];
   const sel=ppl.includes(ui.rPer)?ui.rPer:'';
@@ -676,16 +699,19 @@ function resPersona({X,per}){
   const mine=hs.filter(h=>h.p===sel),open=openOf(sel);
   const subs=[];open.forEach(x=>(x.t.subs||[]).forEach(s=>{if(!s.done&&s.resp===sel)subs.push({x,s})}));
   const fin=X.filter(x=>x.doneIn&&involves(x.t,sel));
+  const hechas=[];X.forEach(x=>{if(!x.I.cancelled)(x.t.subs||[]).forEach(s=>{if(s.done&&s.resp===sel&&inR(s.doneAt))hechas.push({x,s})})});
   const group=(k,cell)=>{const ks=uniq(mine.map(h=>h[k]));return ks.length?tbl([k==='e'?'Empresa':'Tipo',['Horas'],['Tareas']],ks.map(v=>{const ys=mine.filter(h=>h[k]===v);return `<tr><td>${cell(v)}</td><td class="n"><b>${hrs(sumHs(ys))}</b></td><td class="n">${new Set(ys.map(h=>h.x.t.id)).size}</td></tr>`})):''};
   const regs=mine.slice().sort((p,q)=>(q.d||'').localeCompare(p.d||'')).slice(0,20);
   return pick+`<div class="cards4">
     ${kpi(open.length,plural(open.length,'Tarea abierta','Tareas abiertas'),'Donde es responsable o tiene subtareas')}
     ${kpi(subs.length,plural(subs.length,'Subtarea pendiente','Subtareas pendientes'),'A su nombre, ahora')}
+    ${kpi(hechas.length,plural(hechas.length,'Subtarea completada','Subtareas completadas'),per,'--done')}
     ${kpi(hrs(sumHs(mine)),'Horas de Marketing',`Registradas ${per}`)}
     ${kpi(fin.length,'Terminadas',`Tareas en que participó, ${per}`,'--done')}
   </div>
   ${sec('Tareas abiertas','Estado actual. Haz clic en una tarea para abrir su ficha.',open.length?openRows(open,true):'','No tiene tareas abiertas.')}
   ${sec('Subtareas pendientes','Lo que falta de su parte para que las tareas avancen.',subs.length?tbl(['Nº','Tarea','Subtarea',['Desde hace']],subs.map(({x,s})=>`<tr class="click" data-open="${esc(x.t.id)}" tabindex="0"><td class="muted">${esc(x.t.num||'')}</td><td>${esc(x.t.title)}</td><td><b>${esc(s.t)}</b></td><td class="n">${dias(Math.max(0,dd(s.start||todayISO(),todayISO())))}</td></tr>`)):'','No tiene subtareas pendientes.')}
+  ${sec('Subtareas completadas',`Lo que terminó de su parte ${per}.`,hechas.length?tbl(['Nº','Tarea','Subtarea','Completada'],hechas.sort((p,q)=>q.s.doneAt.localeCompare(p.s.doneAt)).map(({x,s})=>`<tr class="click" data-open="${esc(x.t.id)}" tabindex="0"><td class="muted">${esc(x.t.num||'')}</td><td>${esc(x.t.title)}</td><td><b>${esc(s.t)}</b></td><td>${fd(s.doneAt)}</td></tr>`)):'',`No completó subtareas ${per}.`)}
   <div class="cols2">
   ${sec('Horas por empresa',`Registradas ${per}.`,group('e',empCell),`No registró horas ${per}.`)}
   ${sec('Horas por tipo de tarea',`Registradas ${per}.`,group('tipo',v=>esc(v)),`No registró horas ${per}.`)}
@@ -777,7 +803,7 @@ async function openTask(id,keepScroll){
     <textarea class="ttl-in" data-f="title" rows="2" aria-label="Nombre de la tarea" ${dis}>${esc(t.title)}</textarea>
     ${ui.askRev===id&&!ROt?`<div class="ask">Todas las subtareas están listas. ¿Enviar a En revisión?<span class="sp"></span><button type="button" class="btn sm" data-act="revNo">Todavía no</button><button type="button" class="btn pri sm" data-act="revYes">Sí, enviar a revisión</button></div>`:''}
     <div class="box">
-      <div>${stageCell(t)}${t.manos?` <span style="font-size:14px">en manos de <b>${esc(t.manos)}</b></span>`:''}${I.cancelled&&t.motivo?` <span style="font-size:14px">· ${esc(t.motivo)}</span>`:''}
+      <div>${stageCell(t)}${enManos(t)?` <span style="font-size:14px">en manos de <b>${esc(enManos(t))}</b></span>`:''}${I.cancelled&&t.motivo?` <span style="font-size:14px">· ${esc(t.motivo)}</span>`:''}
         <div class="muted" style="font-size:14px;margin-top:2px">${I.isDone?`Terminó el ${fdf(I.end)}${I.endTime?' a las '+I.endTime:''}, ${dur(I.totalH)} en total.`:`Desde el ${fd(lastDate)}${I.cur&&I.cur.startTime?' a las '+I.cur.startTime:''}, ${dur(I.cur?I.cur.hrs:0)} en esta etapa.`}</div></div>
       ${ROt?'':`<div class="mv"><span class="lb">Mover a</span>${COLS.filter(c=>c.id!==t.col).map(c=>`<button type="button" class="btn sm" data-act="moveTo" data-col="${c.id}">${esc(c.name)}</button>`).join('')}${t.col!=='recibido'?`<button type="button" class="btn sm" data-act="stage" data-id="${esc(t.id)}">${t.col==='produccion'?'Cambiar en manos de':t.col==='revision'?'Cambiar revisión':t.col==='terminado'?'Cambiar cómo terminó':'Cambiar etapa'}</button>`:''}</div>`}
     </div>
@@ -788,6 +814,10 @@ async function openTask(id,keepScroll){
       <div class="f"><label>Ingreso</label><div class="ro">${fdf(I.start)}${I.startTime?' a las '+I.startTime:''} <span class="muted">(hace ${dias(dd(I.start,today))})</span></div></div>
       <div class="f full"><label>Responsables de seguimiento</label><div class="pills">${CFG.people.map(p=>`<label class="pill"><input type="checkbox" data-f="resp" value="${esc(p)}" ${(t.resp||[]).includes(p)?'checked':''} ${dis}><span>${av(p)}${esc(p)}</span></label>`).join('')}</div></div>
       <div class="f full"><label for="fDesc">Descripción</label><textarea id="fDesc" data-f="desc" placeholder="Detalles, medidas, links, contactos…" ${dis}>${esc(t.desc||'')}</textarea></div>
+      <div class="f"><label for="fSol">Solicitado por</label><input id="fSol" data-f="solicitante" value="${esc(t.solicitante||'')}" placeholder="Nombre de quien pide el trabajo" ${dis}></div>
+      <div class="f"><label for="fAvi">Correo para avisos</label><input id="fAvi" type="email" multiple data-f="avisar" value="${esc(t.avisar||'')}" placeholder="correo@grupoteknia.cl" ${dis}></div>
+      <div class="f full"><label for="fLink">Link del material</label><div class="lnkrow"><input id="fLink" type="url" data-f="link" value="${esc(t.link||'')}" placeholder="https://drive.google.com/…" ${dis}>${t.link?`<a class="btn sm" data-act="link" href="${esc(t.link)}" target="_blank" rel="noopener">Abrir</a>`:''}</div>
+        <span class="hint">Carpeta o archivo donde queda alojado el diseño (Drive, Canva, etc.).</span></div>
     </div>
     <div class="f"><span class="lb">Subtareas${subs.length?` · ${sd} de ${subs.length} completadas`:''}</span>
       ${subs.length?`<div class="prog" aria-hidden="true"><i style="width:${sd/subs.length*100}%"></i></div>`:''}
@@ -802,12 +832,12 @@ async function openTask(id,keepScroll){
         ${ROt?'':`<div class="subadd"><input id="subT" placeholder="Nueva subtarea" aria-label="Nueva subtarea"><select id="subR" aria-label="Responsable"><option value="">Sin asignar</option>${CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join('')}</select><button type="button" class="btn sm" data-act="subAdd">Agregar</button></div>`}
       </div>
     </div>
-    <div class="f"><span class="lb">Horas de Marketing${horasDe(t)?` · ${hrs(horasDe(t))} en total`:''}</span>
+    ${isObs()?'':`    <div class="f"><span class="lb">Horas de Marketing${horasDe(t)?` · ${hrs(horasDe(t))} en total`:''}</span>
       <div class="subs">
         ${(t.horas||[]).map((h,i)=>`<div class="hrow"><b>${hrs(+h.h||0)}</b><span class="muted">${fd(h.d)}</span><span>${h.p?av(h.p)+' '+esc(h.p):''}</span><span class="muted">${esc(h.n||'')}</span>${ROt?'<span></span>':`<button type="button" class="x" style="font-size:18px;margin:0" data-act="hrsDel" data-i="${i}" aria-label="Quitar horas">×</button>`}</div>`).join('')}
         ${ROt?'':`<div class="hadd"><input id="hrsH" type="number" min="0.25" step="0.25" placeholder="Horas" aria-label="Horas"><select id="hrsP" aria-label="Quién"><option value="">Sin asignar</option>${CFG.people.map(p=>`<option ${p===ui.me?'selected':''}>${esc(p)}</option>`).join('')}</select><input id="hrsD" type="date" value="${today}" aria-label="Fecha"><input id="hrsN" placeholder="Qué se hizo (opcional)" aria-label="Qué se hizo"><button type="button" class="btn sm" data-act="hrsAdd">Agregar</button></div>`}
       </div>
-      <span class="hint">Solo el tiempo trabajado por Marketing. El tiempo esperando aprobaciones o a terceros se mide solo, en el recorrido.</span></div>
+      <span class="hint">Solo el tiempo trabajado por Marketing. El tiempo esperando aprobaciones o a terceros se mide solo, en el recorrido.</span></div>`}
     <div class="f"><span class="lb">Recorrido · ${dur(I.totalH)} en total · <span style="color:var(--mkt)">${dur(I.hm)} con Marketing</span> · <span style="color:var(--ext-text)">${dur(I.he)} esperando a terceros</span></span>
       <div class="scroll"><table class="h"><thead><tr><th>Etapa</th><th>En manos de</th><th>Inicio</th><th>Fin</th><th class="n">Tiempo</th><th>Movió</th></tr></thead><tbody>
       ${I.stays.map(s=>{const nm=s.done?finalOf(s.etapa).name:stageOf(s.key).name,cls=s.done?(s.etapa==='cancelado'?'x':'d'):s.ext?'e':s.key==='recibido'?'r':'m';
@@ -825,6 +855,8 @@ dlg.addEventListener('change',e=>{
     if(added){openTask(t.id,true);toast(`Se creó una subtarea para ${added.join(' y ')}. Escribe qué le toca a cada uno.`)}return}
   if(f==='tipo'){const v=addTipo(el.value);if(v||el.tagName==='SELECT'){t.tipo=v;persist(t.id)}openTask(t.id,true);return}
   if(f==='title'){const v=el.value.trim();if(!v){el.value=t.title;toast('La tarea necesita un nombre');return}t.title=v;persist(t.id);return}
+  if(f==='solicitante'||f==='avisar'){t[f]=el.value.trim();persist(t.id);return}
+  if(f==='link'){let v=el.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;t.link=v;persist(t.id);openTask(t.id,true);return}
   if(f){t[f]=el.value;persist(t.id);if(f==='empresa')openTask(t.id,true);return}
   if(s){const i=+el.dataset.i,sub=t.subs[i];if(!sub)return;
     if(s==='done'){sub.done=el.checked;sub.doneAt=el.checked?todayISO():'';persist(t.id);
@@ -861,6 +893,9 @@ function newTaskForm(){
       <div class="f"><label for="nIng">Fecha de ingreso</label><input id="nIng" name="ingreso" type="date" value="${todayISO()}" required></div>
       <div class="f"><label for="nIngH">Hora de ingreso</label><input id="nIngH" name="ingresoH" type="time" value="${nowHM()}" required></div>
       <div class="f"><label for="nEnt">Fecha de entrega</label><input id="nEnt" name="entrega" type="date"></div>
+      <div class="f"><label for="nSol">Solicitado por <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input id="nSol" name="solicitante" placeholder="Quién pide el trabajo"></div>
+      <div class="f"><label for="nAvi">Correo para avisos <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input id="nAvi" name="avisar" type="email" multiple placeholder="correo@grupoteknia.cl"></div>
+      <div class="f full"><label for="nLink">Link del material <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></label><input id="nLink" name="link" type="url" placeholder="https://drive.google.com/…"></div>
       <div class="f full"><label>Responsables de seguimiento</label><div class="pills">${CFG.people.map(p=>`<label class="pill"><input type="checkbox" name="resp" value="${esc(p)}" ${p===ui.me?'checked':''}><span>${av(p)}${esc(p)}</span></label>`).join('')}</div></div>
       <div class="f full" id="nSubs"></div>
     </div>
@@ -876,7 +911,7 @@ function newTaskForm(){
   nf.onsubmit=e=>{e.preventDefault();const fdt=new FormData(e.target);const title=(fdt.get('title')||'').trim();if(!title)return;
     const id=newId(),ing=fdt.get('ingreso')||todayISO(),ingH=fdt.get('ingresoH')||nowHM(),resp=fdt.getAll('resp');
     const subs=resp.length>1?resp.map(p=>({t:(fdt.get('sub_'+CFG.people.indexOf(p))||'').trim()||`Parte de ${p}`,resp:p,done:false,start:ing,doneAt:''})):[];
-    TASKS.set(id,{id,num:nextNum(),title,empresa:fdt.get('empresa'),tipo:addTipo(fdt.get('tipo')),resp,entrega:fdt.get('entrega')||'',desc:'',subs,col:'recibido',etapa:'',manos:'',motivo:'',moves:[{col:'recibido',etapa:'',manos:'',date:ing,time:ingH,by:UID,byName:ui.me}],created:todayISO(),createdBy:UID,createdByName:ui.me});
+    TASKS.set(id,{id,num:nextNum(),title,empresa:fdt.get('empresa'),tipo:addTipo(fdt.get('tipo')),resp,entrega:fdt.get('entrega')||'',link:(v=>v&&!/^https?:\/\//i.test(v)?'https://'+v:v)((fdt.get('link')||'').trim()),solicitante:(fdt.get('solicitante')||'').trim(),avisar:(fdt.get('avisar')||'').trim(),desc:'',subs,col:'recibido',etapa:'',manos:'',motivo:'',moves:[{col:'recibido',etapa:'',manos:'',date:ing,time:ingH,by:UID,byName:ui.me}],created:todayISO(),createdBy:UID,createdByName:ui.me});
     persist(id);toast(`${TASKS.get(id).num} creada`);openTask(id)};
 }
 function cfgForm(){
@@ -983,6 +1018,8 @@ document.addEventListener('drop',e=>{if(!dragId)return;const col=e.target.closes
 const SB_LIB='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js';
 let SB=null,ME=null;
 const isAdmin=()=>!!(ME&&ME.admin);
+// Observador (clientes internos): ve el tablero y la lista, sin editar ni ver horas internas
+const isObs=()=>!!(ME&&ME.observador);
 const canEdit=t=>!ME||ME.admin||involves(t,ME.nombre)||isCreator(t);
 function loadScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s)})}
 // Misma forma que la base de claude.ai, para no cambiar el resto del código
@@ -1004,26 +1041,28 @@ let sbT=null;
 function sbReload(){clearTimeout(sbT);sbT=setTimeout(async()=>{
   try{await sbLoad();renderAll();if(ui.openId&&dlg.open&&dlg.className==='side'&&!dlg.contains(document.activeElement))openTask(ui.openId,true)}
   catch(e){MODE='caido';renderAll()}},400)}
+// Los usuarios sin correo (observadores) existen en Supabase como usuario@observador.cromatico.cl
+const loginEmail=v=>{v=v.trim().toLowerCase();return v.includes('@')?v:v.replace(/\s+/g,'')+'@observador.cromatico.cl'};
 function loginView(msg){
-  $('#content').innerHTML=`<form class="login" id="lf"><h2>Ingresar</h2><p class="muted" style="margin:0">Usa el correo y la contraseña que te entregó el administrador.</p>
-    <div class="f"><label for="lfE">Correo</label><input id="lfE" type="email" autocomplete="username" required></div>
+  $('#content').innerHTML=`<form class="login" id="lf"><h2>Ingresar</h2><p class="muted" style="margin:0">Usa el correo (o el usuario) y la contraseña que te entregó el administrador.</p>
+    <div class="f"><label for="lfE">Correo o usuario</label><input id="lfE" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
     <div class="f"><label for="lfP">Contraseña</label><input id="lfP" type="password" autocomplete="current-password" required></div>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}
     <button class="btn pri" type="submit">Entrar</button></form>`;
   $('#lfE').focus();
   $('#lf').onsubmit=async e=>{e.preventDefault();e.target.querySelector('button').disabled=true;
-    const {error}=await SB.auth.signInWithPassword({email:$('#lfE').value.trim(),password:$('#lfP').value});
+    const {error}=await SB.auth.signInWithPassword({email:loginEmail($('#lfE').value),password:$('#lfP').value});
     if(error){const c=error.code||'';loginView(c==='email_not_confirmed'?'Este correo aún no está confirmado. En Supabase, el usuario debe crearse con "Auto Confirm User".'
-      :c==='invalid_credentials'?'Correo o contraseña incorrectos.':'No se pudo ingresar: '+(error.message||c));return}
+      :c==='invalid_credentials'?'Usuario o contraseña incorrectos.':'No se pudo ingresar: '+(error.message||c));return}
     sbStart()};
 }
 async function sbStart(){
   const {data:{session}}=await SB.auth.getSession();
   if(!session){MODE='login';renderAll();loginView();return}
-  const {data:p,error}=await SB.from('perfiles').select('id,nombre,admin').eq('id',session.user.id).maybeSingle();
+  const {data:p,error}=await SB.from('perfiles').select('*').eq('id',session.user.id).maybeSingle();
   if(error||!p){const em=session.user.email;await SB.auth.signOut();MODE='login';renderAll();
     loginView(error?'No se pudo leer tu perfil: '+(error.message||error.code):`La contraseña es correcta, pero ${em} todavía no tiene perfil en el tablero. Pide al administrador que lo agregue.`);return}
-  ME=p;UID=p.id;DB=sbAdapter();MODE='db';
+  ME=p;UID=p.id;DB=sbAdapter();MODE='db';if(p.observador)RO=true;
   try{await sbLoad()}catch(e){MODE='caido';renderAll();return}
   renderAll();
   SB.channel('cambios')
